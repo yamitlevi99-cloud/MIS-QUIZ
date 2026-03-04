@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>מבוא למערכות מידע - פלטפורמת בחנים</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#070714;--card-bg:rgba(255,255,255,0.04);--card-border:rgba(0,212,255,0.15);
+  --cyan:#00d4ff;--purple:#7b2ff7;--pink:#ff2d95;--green:#00ff88;--gold:#ffd700;--orange:#ff6b35;
+  --text:#e0e6ed;--text-dim:#8892a4;--radius:16px;
+  --glow-cyan:0 0 30px rgba(0,212,255,0.3);--glow-purple:0 0 30px rgba(123,47,247,0.3);
+  --glow-pink:0 0 30px rgba(255,45,149,0.3);
+}
+html{scroll-behavior:smooth}
+body{font-family:'Heebo',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh;line-height:1.6}
+
+/* ── SCANLINES ── */
+#scanlines{
+  position:fixed;inset:0;z-index:9998;pointer-events:none;
+  background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.04) 3px,rgba(0,0,0,0.04) 4px);
+}
+/* ── CURSOR TRAIL ── */
+#cursor-canvas{position:fixed;inset:0;z-index:9997;pointer-events:none}
+/* ── MATRIX RAIN ── */
+#matrix-canvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.07}
+/* ── THREE.JS BG ── */
+#three-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+
+/* ── HEX GRID ── */
+#hex-overlay{
+  position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.04;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='104'%3E%3Cpolygon points='30,2 58,17 58,47 30,62 2,47 2,17' fill='none' stroke='%2300d4ff' stroke-width='0.5'/%3E%3Cpolygon points='30,52 58,67 58,97 30,112 2,97 2,67' fill='none' stroke='%2300d4ff' stroke-width='0.5'/%3E%3C/svg%3E");
+}
+
+.container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:2}
+.gradient-text{background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ── GLITCH TEXT ── */
+.glitch-wrap{position:relative;display:inline-block}
+.glitch-wrap::before,.glitch-wrap::after{
+  content:attr(data-text);position:absolute;top:0;left:0;width:100%;
+  background:linear-gradient(135deg,var(--cyan),var(--purple),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.glitch-wrap::before{
+  animation:glitch1 4s infinite;clip-path:polygon(0 15%,100% 15%,100% 35%,0 35%);
+  transform:translateX(-3px);opacity:.7;
+}
+.glitch-wrap::after{
+  animation:glitch2 4s infinite;clip-path:polygon(0 60%,100% 60%,100% 80%,0 80%);
+  transform:translateX(3px);opacity:.7;
+}
+@keyframes glitch1{
+  0%,90%,100%{transform:translateX(-3px);opacity:0}
+  91%{transform:translateX(-4px);opacity:.7}
+  93%{transform:translateX(3px);opacity:.7}
+  95%{transform:translateX(-2px);opacity:.7}
+  97%{transform:translateX(0);opacity:0}
+}
+@keyframes glitch2{
+  0%,90%,100%{transform:translateX(3px);opacity:0}
+  92%{transform:translateX(5px);opacity:.7}
+  94%{transform:translateX(-4px);opacity:.7}
+  96%{transform:translateX(2px);opacity:.7}
+  98%{transform:translateX(0);opacity:0}
+}
+
+header{
+  position:fixed;top:0;right:0;left:0;z-index:100;
+  background:rgba(7,7,20,0.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(0,212,255,0.12);padding:16px 0;
+  transition:transform .3s;
+}
+header .container{display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.4rem;font-weight:900;letter-spacing:-0.5px;position:relative;display:flex;flex-direction:column;gap:1px}
+.logo-main{white-space:nowrap}
+.logo-sub{font-size:.62rem;font-weight:400;letter-spacing:.01em;color:var(--text-dim);opacity:.75;white-space:nowrap}
+.logo span{color:var(--cyan);text-shadow:0 0 20px rgba(0,212,255,0.6)}
+.logo-badge{
+  display:inline-block;font-size:.6rem;font-weight:700;letter-spacing:.12em;
+  background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:4px;
+  padding:2px 6px;color:var(--cyan);vertical-align:middle;margin-right:8px;
+  animation:badgePulse 2s ease-in-out infinite;
+}
+@keyframes badgePulse{0%,100%{box-shadow:0 0 6px rgba(0,212,255,.2)}50%{box-shadow:0 0 14px rgba(0,212,255,.6)}}
+nav a{color:var(--text-dim);text-decoration:none;margin-right:28px;font-size:.95rem;transition:color .3s;font-weight:500;position:relative}
+nav a::after{content:'';position:absolute;bottom:-4px;right:0;left:0;height:1px;background:var(--cyan);transform:scaleX(0);transition:transform .3s;transform-origin:left}
+nav a:hover{color:var(--cyan)}
+nav a:hover::after{transform:scaleX(1)}
+
+/* ── HERO ── */
+.hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 60px;position:relative;z-index:2}
+.hero-content{max-width:860px}
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.8rem;font-weight:700;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--cyan);border:1px solid rgba(0,212,255,.25);border-radius:100px;
+  padding:6px 18px;margin-bottom:28px;
+  background:rgba(0,212,255,.05);animation:heroIn .8s ease-out both;
+}
+.hero-eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:dotBlink 1.4s ease-in-out infinite}
+@keyframes dotBlink{0%,100%{opacity:1}50%{opacity:.2}}
+.hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:900;line-height:1.2;margin-bottom:20px;animation:heroIn 1s ease-out .1s both}
+.hero .subtitle{font-size:clamp(1rem,2.5vw,1.35rem);color:var(--text-dim);margin-bottom:48px;animation:heroIn 1s ease-out .2s both;max-width:640px;margin-inline:auto}
+.hero-stats{display:flex;justify-content:center;gap:40px;margin-top:40px;animation:heroIn 1s ease-out .4s both;flex-wrap:wrap}
+.hero-stats .stat{text-align:center;position:relative;padding:20px 28px;background:rgba(255,255,255,.03);border:1px solid rgba(0,212,255,.12);border-radius:14px;min-width:110px;overflow:hidden}
+.hero-stats .stat::before{content:'';position:absolute;top:-40%;left:-40%;width:180%;height:180%;background:radial-gradient(circle,rgba(0,212,255,.08) 0%,transparent 70%);animation:statGlow 3s ease-in-out infinite alternate}
+@keyframes statGlow{0%{transform:translate(-10%,-10%)}100%{transform:translate(10%,10%)}}
+.hero-stats .stat-num{font-size:2.6rem;font-weight:900;color:var(--cyan);text-shadow:0 0 20px rgba(0,212,255,.5);line-height:1}
+.hero-stats .stat-label{font-size:.8rem;color:var(--text-dim);margin-top:6px;letter-spacing:.05em}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:10px;padding:16px 48px;border:none;border-radius:50px;
+  font-size:1.1rem;font-weight:700;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;
+  box-shadow:var(--glow-cyan);transition:all .3s;text-decoration:none;
+  animation:heroIn 1s ease-out .3s both;position:relative;overflow:hidden;
+}
+.cta-btn::before{
+  content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  transform:skewX(-20deg);animation:btnShimmer 3s ease-in-out infinite 1s;
+}
+@keyframes btnShimmer{0%,100%{left:-60%}50%{left:120%}}
+.cta-btn:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 0 60px rgba(0,212,255,.55)}
+
+@keyframes heroIn{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+.glow-orb{position:absolute;border-radius:50%;filter:blur(100px);opacity:.2;pointer-events:none;animation:orbFloat 8s ease-in-out infinite alternate}
+.glow-orb.cyan{width:500px;height:500px;background:var(--cyan);top:20%;right:5%}
+.glow-orb.purple{width:400px;height:400px;background:var(--purple);bottom:15%;left:5%;animation-delay:3s}
+.glow-orb.pink{width:300px;height:300px;background:var(--pink);top:50%;left:40%;animation-delay:6s;opacity:.12}
+@keyframes orbFloat{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,-30px) scale(1.15)}}
+
+/* ── REGISTRATION ── */
+#registration{padding:80px 0;position:relative;z-index:2}
+.reg-card{
+  max-width:540px;margin:0 auto;
+  background:rgba(7,7,20,.6);backdrop-filter:blur(24px);
+  border:1px solid var(--card-border);border-radius:20px;
+  padding:48px 44px;text-align:center;
+  box-shadow:var(--glow-cyan),0 40px 80px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+.reg-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--cyan),var(--purple),var(--pink),transparent);
+  animation:topLine 3s linear infinite;
+}
+@keyframes topLine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+/* HUD corner brackets */
+.reg-card::after{
+  content:'';position:absolute;inset:12px;border-radius:12px;
+  border:1px solid rgba(0,212,255,.07);pointer-events:none;
+}
+.hud-corner{position:absolute;width:18px;height:18px;border-color:rgba(0,212,255,.5);border-style:solid}
+.hud-tl{top:8px;right:8px;border-width:2px 0 0 2px}
+.hud-tr{top:8px;left:8px;border-width:2px 2px 0 0}
+.hud-bl{bottom:8px;right:8px;border-width:0 0 2px 2px}
+.hud-br{bottom:8px;left:8px;border-width:0 2px 2px 0}
+.reg-card h2{font-size:1.9rem;margin-bottom:8px}
+.reg-card .reg-subtitle{color:var(--text-dim);margin-bottom:32px;font-size:.95rem}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:0}
+.form-group{margin-bottom:18px;text-align:right}
+.form-group label{display:flex;align-items:center;gap:6px;font-size:.88rem;margin-bottom:7px;color:var(--text-dim);font-weight:500}
+.field-icon{font-size:.9rem}
+.form-group input{
+  width:100%;padding:14px 18px;border-radius:12px;border:1px solid rgba(0,212,255,0.18);
+  background:rgba(255,255,255,0.04);color:#fff;font-size:.98rem;font-family:inherit;
+  transition:border-color .25s,box-shadow .25s,background .25s;outline:none;
+  direction:rtl;
+}
+.form-group input:focus{border-color:var(--cyan);box-shadow:0 0 18px rgba(0,212,255,.15);background:rgba(0,212,255,.03)}
+.form-group input::placeholder{color:rgba(255,255,255,.25)}
+.form-group input.valid{border-color:var(--green);box-shadow:0 0 12px rgba(0,255,136,.12)}
+.form-group input.invalid{border-color:var(--pink);box-shadow:0 0 12px rgba(255,45,149,.12)}
+.id-hint{
+  font-size:.78rem;margin-top:5px;padding:4px 10px;border-radius:6px;
+  transition:all .2s;text-align:right;
+}
+.id-hint.neutral{color:var(--text-dim)}
+.id-hint.good{color:var(--green)}
+.id-hint.bad{color:var(--pink)}
+.id-progress{height:3px;border-radius:3px;background:rgba(255,255,255,.07);margin-top:6px;overflow:hidden}
+.id-progress-fill{height:100%;border-radius:3px;transition:width .2s,background .2s}
+.reg-submit{
+  width:100%;padding:16px;border:none;border-radius:12px;font-size:1.05rem;
+  font-weight:700;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;
+  transition:all .3s;margin-top:12px;position:relative;overflow:hidden;
+}
+.reg-submit::after{
+  content:'';position:absolute;top:-50%;left:-60%;width:40%;height:200%;
+  background:rgba(255,255,255,.15);transform:skewX(-20deg);
+  transition:left .4s;
+}
+.reg-submit:hover::after{left:120%}
+.reg-submit:hover{box-shadow:0 0 50px rgba(0,212,255,.45);transform:translateY(-2px)}
+.reg-submit:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.reg-submit:disabled::after{display:none}
+
+/* ── QUIZZES ── */
+#quizzes{padding:80px 0 100px;position:relative;z-index:2}
+#quizzes .section-title{text-align:center;font-size:2.2rem;margin-bottom:12px}
+#quizzes .section-sub{text-align:center;color:var(--text-dim);margin-bottom:52px;font-size:1rem}
+.quiz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:24px;perspective:1400px}
+
+.quiz-card{
+  background:rgba(7,7,20,.7);backdrop-filter:blur(16px);
+  border:1px solid var(--card-border);border-radius:var(--radius);
+  padding:32px 28px;cursor:pointer;position:relative;overflow:hidden;
+  transform-style:preserve-3d;transition:transform .45s,box-shadow .45s,border-color .3s;
+}
+/* shimmer sweep */
+.quiz-card::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,.07),transparent);
+  transform:skewX(-20deg);transition:left .6s;pointer-events:none;
+}
+.quiz-card:hover::before{left:160%}
+/* top accent bar */
+.quiz-card .card-top-bar{
+  position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  transform:scaleX(0);transform-origin:right;transition:transform .4s;
+}
+.quiz-card:hover .card-top-bar{transform:scaleX(1);transform-origin:left}
+.quiz-card:hover{box-shadow:0 24px 60px rgba(0,212,255,.14),0 0 0 1px rgba(0,212,255,.25);border-color:rgba(0,212,255,.35)}
+/* HUD corner brackets */
+.quiz-card .qc-tl,.quiz-card .qc-tr,.quiz-card .qc-bl,.quiz-card .qc-br{
+  position:absolute;width:12px;height:12px;border-color:rgba(0,212,255,.35);border-style:solid;
+  transition:border-color .3s;
+}
+.quiz-card:hover .qc-tl,.quiz-card:hover .qc-tr,.quiz-card:hover .qc-bl,.quiz-card:hover .qc-br{border-color:rgba(0,212,255,.8)}
+.quiz-card .qc-tl{top:6px;right:6px;border-width:1.5px 0 0 1.5px}
+.quiz-card .qc-tr{top:6px;left:6px;border-width:1.5px 1.5px 0 0}
+.quiz-card .qc-bl{bottom:6px;right:6px;border-width:0 0 1.5px 1.5px}
+.quiz-card .qc-br{bottom:6px;left:6px;border-width:0 1.5px 1.5px 0}
+.quiz-card .emoji{font-size:2.8rem;margin-bottom:12px;display:block;line-height:1}
+.quiz-card .emoji .qi{width:68px;height:68px;overflow:visible;display:block}
+/* ── QUIZ ICON ANIMATIONS ─────────────────────────────────────── */
+@keyframes qi_spin{to{transform:rotate(360deg)}}
+@keyframes qi_spinr{from{transform:rotate(360deg)}to{transform:rotate(0deg)}}
+@keyframes qi_pulse{0%,100%{transform:scale(1);opacity:.35}50%{transform:scale(1.3);opacity:.85}}
+@keyframes qi_breathe{0%,100%{opacity:.18}50%{opacity:.85}}
+@keyframes qi_flow{to{stroke-dashoffset:-12}}
+@keyframes qi_flowR{to{stroke-dashoffset:12}}
+@keyframes qi_scan_py{0%,100%{transform:translateY(0px);opacity:.9}50%{transform:translateY(58px);opacity:.5}}
+@keyframes qi_scan_sh{0%,100%{transform:translateY(-17px);opacity:.3}50%{transform:translateY(17px);opacity:.95}}
+@keyframes qi_ripple{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.8);opacity:0}}
+@keyframes qi_flicker{0%,89%,91%,100%{opacity:1}90%{opacity:.35}}
+.quiz-card h3{font-size:1.05rem;margin-bottom:8px;font-weight:700;line-height:1.4}
+.quiz-card .card-meta{font-size:.82rem;color:var(--text-dim)}
+.quiz-card .card-meta span{margin-left:16px}
+.quiz-card .badge{
+  position:absolute;top:14px;left:14px;
+  padding:4px 12px;border-radius:20px;font-size:.72rem;font-weight:700;
+  background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.28);
+}
+.quiz-card.completed .badge{background:rgba(0,255,136,.12);color:var(--green);border-color:rgba(0,255,136,.28)}
+/* hologram flicker for completed */
+@keyframes holoFlicker{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.85}94%{opacity:1}96%{opacity:.9}97%{opacity:1}}
+.quiz-card.completed{animation:holoFlicker 5s ease-in-out infinite}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.88);backdrop-filter:blur(12px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+  opacity:0;transition:opacity .3s;
+}
+.modal-overlay.active{display:flex;opacity:1}
+.modal{
+  background:linear-gradient(180deg,#0c0c22 0%,#07071a 100%);
+  border:1px solid rgba(0,212,255,.2);border-radius:20px;
+  width:100%;max-width:700px;max-height:92vh;overflow-y:auto;
+  padding:40px;position:relative;
+  animation:modalIn .38s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 0 0 1px rgba(0,212,255,.05),0 40px 80px rgba(0,0,0,.7),var(--glow-cyan);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.9) translateY(24px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-close{
+  position:absolute;top:16px;left:16px;width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);
+  color:#fff;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .3s;
+}
+.modal-close:hover{background:rgba(255,45,149,.2);border-color:rgba(255,45,149,.4);transform:rotate(90deg)}
+.modal h2{font-size:1.55rem;margin-bottom:6px}
+.modal .quiz-info{color:var(--text-dim);font-size:.9rem;margin-bottom:28px}
+.progress-bar{width:100%;height:6px;border-radius:3px;background:rgba(255,255,255,.07);margin-bottom:32px;overflow:hidden;position:relative}
+.progress-bar .fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--purple));transition:width .4s ease}
+/* EKG pulse on progress bar */
+.progress-bar::after{
+  content:'';position:absolute;top:0;right:0;bottom:0;width:40px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+  animation:ekgScan 2s linear infinite;
+}
+@keyframes ekgScan{from{right:100%}to{right:-40px}}
+
+.question-block{animation:fadeUp .35s ease-out}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.question-num{font-size:.8rem;color:var(--cyan);font-weight:700;margin-bottom:8px;letter-spacing:.08em}
+.question-text{font-size:1.15rem;font-weight:700;margin-bottom:24px;line-height:1.55}
+.options{display:flex;flex-direction:column;gap:11px}
+.option-btn{
+  display:flex;align-items:center;gap:14px;
+  padding:15px 20px;border-radius:12px;border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.03);color:var(--text);font-size:.98rem;
+  cursor:pointer;transition:all .25s;font-family:inherit;text-align:right;width:100%;
+  position:relative;overflow:hidden;
+}
+.option-btn::before{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(0,212,255,.05),transparent);
+  transform:translateX(-100%);transition:transform .4s;
+}
+.option-btn:hover::before{transform:translateX(100%)}
+.option-btn:hover{border-color:rgba(0,212,255,.4);background:rgba(0,212,255,.06);transform:translateX(-3px)}
+.option-btn .letter{
+  min-width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:.85rem;flex-shrink:0;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);transition:all .25s;
+}
+.option-btn.correct{border-color:var(--green);background:rgba(0,255,136,.09);transform:translateX(0)}
+.option-btn.correct .letter{background:var(--green);color:#000;border-color:var(--green);box-shadow:0 0 14px rgba(0,255,136,.4)}
+.option-btn.wrong{border-color:var(--pink);background:rgba(255,45,149,.08);animation:glitchRow .3s ease-out}
+.option-btn.wrong .letter{background:var(--pink);color:#fff;border-color:var(--pink);box-shadow:0 0 14px rgba(255,45,149,.4)}
+.option-btn.disabled{pointer-events:none}
+@keyframes glitchRow{
+  0%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}100%{transform:translateX(0)}
+}
+
+.next-btn{
+  margin-top:28px;padding:14px 44px;border:none;border-radius:12px;
+  font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));color:#fff;
+  transition:all .3s;display:none;position:relative;overflow:hidden;
+}
+.next-btn:hover{box-shadow:var(--glow-cyan);transform:translateY(-2px)}
+.next-btn.visible{display:inline-block;animation:fadeUp .3s ease-out}
+
+/* ── RESULTS ── */
+.results-view{text-align:center;animation:fadeUp .5s ease-out}
+.score-circle{
+  width:160px;height:160px;border-radius:50%;margin:0 auto 24px;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  position:relative;
+}
+.score-ring-svg{position:absolute;inset:0;width:100%;height:100%}
+.score-ring-bg{fill:none;stroke:rgba(255,255,255,.06);stroke-width:6}
+.score-ring-fill{fill:none;stroke-width:6;stroke-linecap:round;stroke-dasharray:440;stroke-dashoffset:440;transition:stroke-dashoffset 1.2s cubic-bezier(.22,1,.36,1) .3s}
+.score-ring-spin{fill:none;stroke:rgba(123,47,247,.4);stroke-width:2;stroke-dasharray:20 400;animation:spinRing 2.5s linear infinite}
+@keyframes spinRing{from{stroke-dashoffset:0}to{stroke-dashoffset:-440}}
+.score-num{font-size:2.8rem;font-weight:900;line-height:1;position:relative;z-index:1}
+.score-label{font-size:.85rem;color:var(--text-dim);position:relative;z-index:1}
+.results-message{font-size:1.3rem;font-weight:700;margin-bottom:24px}
+.results-review{text-align:right;margin-top:32px}
+.review-item{padding:16px;border-radius:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);transition:border-color .2s}
+.review-item:hover{border-color:rgba(255,255,255,.12)}
+.review-item.ok{border-right:3px solid var(--green)}
+.review-item.fail{border-right:3px solid var(--pink)}
+.review-item .q{font-weight:700;margin-bottom:6px;font-size:.95rem}
+.review-item .a{font-size:.85rem;color:var(--text-dim)}
+.review-item .a .right{color:var(--green);font-weight:600}
+.review-item .a .yours{color:var(--pink);font-weight:600}
+.submit-results-btn{
+  margin-top:24px;padding:14px 44px;border:none;border-radius:12px;
+  font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;
+  background:linear-gradient(135deg,var(--green),var(--cyan));color:#000;
+  transition:all .3s;
+}
+.submit-results-btn:hover{box-shadow:0 0 45px rgba(0,255,136,.3);transform:translateY(-2px)}
+.submit-results-btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.back-btn{margin-top:12px;padding:12px 32px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:transparent;color:var(--text);font-size:.95rem;cursor:pointer;font-family:inherit;transition:all .3s}
+.back-btn:hover{border-color:var(--cyan);color:var(--cyan)}
+
+/* ── CONFETTI ── */
+.confetti-container{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:300}
+.confetti-piece{position:absolute;width:10px;height:10px;top:-20px;animation:confettiFall 3s ease-in forwards}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+
+footer{position:relative;z-index:2;text-align:center;padding:48px 24px;border-top:1px solid rgba(255,255,255,.05);color:var(--text-dim);font-size:.85rem}
+.footer-inner{display:flex;flex-direction:column;align-items:center;gap:12px}
+.footer-tech-badge{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(0,212,255,.5);border:1px solid rgba(0,212,255,.15);border-radius:4px;padding:4px 10px}
+
+/* ── EXCEL DOWNLOAD BUTTON ─────────────────────────────────────── */
+.excel-fab{position:fixed;bottom:32px;left:32px;z-index:500;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,rgba(0,255,136,.15),rgba(0,212,255,.1));
+  border:1px solid rgba(0,255,136,.45);border-radius:50px;
+  padding:12px 22px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.9rem;font-weight:700;
+  color:#00ff88;letter-spacing:.03em;
+  box-shadow:0 0 18px rgba(0,255,136,.2),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:all .25s ease;text-decoration:none;user-select:none}
+.excel-fab:hover{background:linear-gradient(135deg,rgba(0,255,136,.28),rgba(0,212,255,.18));
+  box-shadow:0 0 35px rgba(0,255,136,.45),inset 0 1px 0 rgba(255,255,255,.12);
+  transform:translateY(-2px) scale(1.03);color:#00ff88}
+.excel-fab:active{transform:translateY(0) scale(.98)}
+.excel-fab svg{flex-shrink:0}
+.excel-fab .fab-label{white-space:nowrap}
+.excel-fab.loading{opacity:.7;pointer-events:none}
+
+/* ── ADMIN AUTH MODAL ──────────────────────────────────────────── */
+.admin-overlay{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;
+  background:rgba(7,7,20,.85);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .3s ease}
+.admin-overlay.active{opacity:1;pointer-events:all}
+.admin-modal{background:rgba(10,10,30,.95);border:1px solid rgba(0,255,136,.3);border-radius:20px;
+  padding:40px 36px;width:min(90vw,400px);position:relative;
+  box-shadow:0 0 60px rgba(0,255,136,.15),0 0 0 1px rgba(0,255,136,.08);
+  animation:adminIn .35s cubic-bezier(.34,1.56,.64,1)}
+@keyframes adminIn{from{transform:scale(.85) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}
+@keyframes iconPop{from{transform:scale(.3);opacity:0}to{transform:scale(1);opacity:1}}
+.admin-modal h2{text-align:center;font-size:1.3rem;font-weight:800;margin-bottom:6px;
+  background:linear-gradient(135deg,var(--green),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.admin-modal .admin-sub{text-align:center;font-size:.82rem;color:var(--text-dim);margin-bottom:28px}
+.admin-field{margin-bottom:18px}
+.admin-field label{display:block;font-size:.8rem;font-weight:600;color:var(--cyan);margin-bottom:6px;letter-spacing:.04em}
+.admin-field input{width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(0,212,255,.2);
+  border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Heebo',sans-serif;font-size:.95rem;
+  outline:none;transition:border-color .2s,box-shadow .2s;direction:ltr}
+.admin-field input:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.12)}
+.admin-field input.input-error{border-color:var(--pink);box-shadow:0 0 0 3px rgba(255,45,149,.12);animation:shake .35s}
+.admin-error{font-size:.82rem;color:var(--pink);text-align:center;min-height:20px;margin-bottom:12px;font-weight:600}
+.admin-submit{width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;font-family:'Heebo',sans-serif;
+  font-size:1rem;font-weight:800;letter-spacing:.04em;
+  background:linear-gradient(135deg,rgba(0,255,136,.25),rgba(0,212,255,.2));
+  border:1px solid rgba(0,255,136,.45);color:var(--green);
+  box-shadow:0 0 18px rgba(0,255,136,.18);transition:all .2s}
+.admin-submit:hover{background:linear-gradient(135deg,rgba(0,255,136,.38),rgba(0,212,255,.3));
+  box-shadow:0 0 30px rgba(0,255,136,.35);transform:translateY(-1px)}
+.admin-cancel{display:block;text-align:center;margin-top:14px;font-size:.82rem;color:var(--text-dim);
+  cursor:pointer;transition:color .2s}
+.admin-cancel:hover{color:var(--text)}
+.admin-lock-icon{text-align:center;font-size:2.2rem;margin-bottom:10px;filter:drop-shadow(0 0 10px rgba(0,255,136,.5))}
+
+/* ── LOCKED QUIZ CARDS ── */
+.quiz-card.locked{opacity:.65}
+.quiz-card.locked::after{content:'';position:absolute;inset:0;background:rgba(7,7,20,.55);border-radius:var(--radius);pointer-events:none;z-index:1}
+.lock-overlay{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none}
+.lock-overlay span{font-size:.72rem;font-weight:700;color:var(--orange);letter-spacing:.08em;text-shadow:0 0 10px rgba(255,107,53,.6)}
+/* ── LOCK ADMIN FAB ── */
+.lock-fab{position:fixed;bottom:32px;right:32px;z-index:500;display:flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,rgba(123,47,247,.18),rgba(255,107,53,.12));
+  border:1px solid rgba(123,47,247,.5);border-radius:50px;
+  padding:12px 22px;cursor:pointer;font-family:'Heebo',sans-serif;font-size:.9rem;font-weight:700;
+  color:#b67fff;letter-spacing:.03em;
+  box-shadow:0 0 18px rgba(123,47,247,.22),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:all .25s ease;user-select:none}
+.lock-fab:hover{background:linear-gradient(135deg,rgba(123,47,247,.3),rgba(255,107,53,.2));box-shadow:0 0 35px rgba(123,47,247,.45);transform:translateY(-2px) scale(1.03);color:#c990ff}
+.lock-fab:active{transform:translateY(0) scale(.98)}
+/* ── LOCK PANEL OVERLAY ── */
+.lock-panel-overlay{position:fixed;inset:0;z-index:1100;display:flex;align-items:center;justify-content:center;
+  background:rgba(7,7,20,.88);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .3s ease}
+.lock-panel-overlay.active{opacity:1;pointer-events:all}
+.lock-panel-modal{background:rgba(10,10,30,.97);border:1px solid rgba(123,47,247,.35);border-radius:20px;
+  padding:36px 32px;width:min(92vw,480px);max-height:85vh;overflow-y:auto;position:relative;
+  box-shadow:0 0 60px rgba(123,47,247,.18),0 0 0 1px rgba(123,47,247,.08);
+  animation:adminIn .35s cubic-bezier(.34,1.56,.64,1)}
+.lock-panel-modal h2{text-align:center;font-size:1.25rem;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(135deg,#b67fff,var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lp-sub{text-align:center;font-size:.8rem;color:var(--text-dim);margin-bottom:24px}
+.quiz-lock-row{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.06);
+  background:rgba(255,255,255,.02);margin-bottom:8px;transition:border-color .2s;gap:8px}
+.quiz-lock-row:hover{border-color:rgba(123,47,247,.25)}
+.ql-num{font-size:.7rem;color:var(--text-dim);flex-shrink:0;min-width:48px}
+.ql-title{font-size:.82rem;font-weight:600;flex:1}
+.toggle-wrap{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle-wrap input{opacity:0;width:0;height:0;position:absolute}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,.1);border-radius:24px;cursor:pointer;border:1px solid rgba(255,255,255,.12);transition:all .3s}
+.toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#888;transition:all .3s}
+.toggle-wrap input:checked+.toggle-slider{background:rgba(0,255,136,.2);border-color:rgba(0,255,136,.45)}
+.toggle-wrap input:checked+.toggle-slider::before{transform:translateX(20px);background:var(--green);box-shadow:0 0 8px rgba(0,255,136,.6)}
+.lp-save-btn{width:100%;padding:13px;border:none;border-radius:12px;cursor:pointer;font-family:'Heebo',sans-serif;
+  font-size:1rem;font-weight:800;margin-top:16px;
+  background:linear-gradient(135deg,rgba(123,47,247,.3),rgba(255,107,53,.2));
+  border:1px solid rgba(123,47,247,.5);color:#c990ff;
+  box-shadow:0 0 18px rgba(123,47,247,.18);transition:all .2s}
+.lp-save-btn:hover{box-shadow:0 0 30px rgba(123,47,247,.35);transform:translateY(-1px)}
+.lp-close-btn{display:block;text-align:center;margin-top:12px;font-size:.82rem;color:var(--text-dim);cursor:pointer;transition:color .2s}
+.lp-close-btn:hover{color:var(--text)}
+.lp-status{text-align:center;font-size:.8rem;min-height:20px;margin-bottom:4px;transition:color .3s}
+.lp-status.ok{color:var(--green)}
+.lp-status.err{color:var(--pink)}
+.lp-icon{text-align:center;font-size:2rem;margin-bottom:8px;filter:drop-shadow(0 0 10px rgba(123,47,247,.6))}
+.hidden{display:none!important}
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(0,212,255,.25);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,212,255,.45)}
+.modal::-webkit-scrollbar{width:5px}
+.modal::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:3px}
+
+.toast{
+  position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);
+  padding:14px 28px;border-radius:12px;font-size:.95rem;font-weight:600;z-index:400;
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  background:rgba(7,7,20,.95);border:1px solid var(--green);color:var(--green);
+  backdrop-filter:blur(12px);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.error{border-color:var(--pink);color:var(--pink)}
+
+@media(max-width:768px){
+  .hero-stats{gap:14px}
+  .hero-stats .stat{padding:14px 18px;min-width:90px}
+  .quiz-grid{grid-template-columns:1fr}
+  .modal{padding:28px 20px}
+  .reg-card{padding:32px 22px}
+  nav a{margin-right:14px;font-size:.85rem}
+  .form-row{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  nav{display:none}
+  .quiz-card:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+<div id="scanlines"></div>
+<canvas id="cursor-canvas"></canvas>
+<canvas id="matrix-canvas"></canvas>
+<div id="hex-overlay"></div>
+<canvas id="three-bg"></canvas>
+
+<header>
+  <div class="container">
+    <div class="logo">
+      <div class="logo-main"><span>MIS</span> Quiz Platform</div>
+      <div class="logo-sub">מבוא למערכות מידע — כל הזכויות שמורות לגב&#39; יעל לוי-מימון</div>
+    </div>
+    <nav>
+      <a href="#hero">ראשי</a>
+      <a href="#registration">הרשמה</a>
+      <a href="#quizzes">בחנים</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero" id="hero">
+  <div class="glow-orb cyan"></div>
+  <div class="glow-orb purple"></div>
+  <div class="glow-orb pink"></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow">
+      <span class="dot"></span>
+      MIS Quiz Platform
+    </div>
+    <h1>
+      <span class="glitch-wrap gradient-text" data-text="מבוא למערכות מידע">מבוא למערכות מידע</span><br>
+      פלטפורמת בחנים אינטראקטיבית
+    </h1>
+    <p class="subtitle">בחנו את הידע שלכם ב-10 נושאים מרכזיים בקורס &mdash; 50 שאלות, ציון מיידי, וחוויה ברמה אחרת</p>
+    <a href="#registration" class="cta-btn">
+      <span>התחילו עכשיו</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+    </a>
+    <div class="hero-stats">
+      <div class="stat"><div class="stat-num" data-count="10">0</div><div class="stat-label">בחנים</div></div>
+      <div class="stat"><div class="stat-num" data-count="50">0</div><div class="stat-label">שאלות</div></div>
+      <div class="stat"><div class="stat-num" data-count="9">0</div><div class="stat-label">מצגות</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="registration">
+  <div class="container">
+    <div class="reg-card" id="regCard">
+      <div class="hud-corner hud-tl"></div>
+      <div class="hud-corner hud-tr"></div>
+      <div class="hud-corner hud-bl"></div>
+      <div class="hud-corner hud-br"></div>
+      <h2 class="gradient-text">הרשמה למערכת</h2>
+      <p class="reg-subtitle">הזינו את הפרטים שלכם כדי להתחיל</p>
+      <form id="regForm" autocomplete="off">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName"><span class="field-icon">👤</span>שם פרטי</label>
+            <input type="text" id="firstName" placeholder="שם פרטי" required>
+          </div>
+          <div class="form-group">
+            <label for="lastName"><span class="field-icon">👤</span>שם משפחה</label>
+            <input type="text" id="lastName" placeholder="שם משפחה" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="studentId"><span class="field-icon">🪪</span>תעודת זהות</label>
+          <input type="text" id="studentId" placeholder="הזינו 9 ספרות" required maxlength="9" inputmode="numeric">
+          <div class="id-hint neutral" id="idHint">יש להזין בדיוק 9 ספרות</div>
+          <div class="id-progress"><div class="id-progress-fill" id="idProgressFill" style="width:0%;background:var(--cyan)"></div></div>
+        </div>
+        <button type="submit" class="reg-submit" id="regBtn">כניסה לפלטפורמה</button>
+      </form>
+    </div>
+    <div class="reg-card hidden" id="regSuccess" style="border-color:rgba(0,255,136,0.3)">
+      <div class="hud-corner hud-tl"></div>
+      <div class="hud-corner hud-tr"></div>
+      <div class="hud-corner hud-bl"></div>
+      <div class="hud-corner hud-br"></div>
+      <div style="font-size:3.2rem;margin-bottom:16px;animation:iconPop .5s cubic-bezier(.34,1.56,.64,1)">✅</div>
+      <h2 style="color:var(--green)">נרשמת בהצלחה!</h2>
+      <p id="welcomeMsg" style="margin-bottom:0;color:var(--text-dim)"></p>
+    </div>
+  </div>
+</section>
+
+<section id="quizzes">
+  <div class="container">
+    <h2 class="section-title gradient-text">הבחנים שלנו</h2>
+    <p class="section-sub">בחרו בוחן להתחיל &mdash; כל בוחן כולל 5 שאלות</p>
+    <div class="quiz-grid" id="quizGrid"></div>
+  </div>
+</section>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confetti-container" id="confettiContainer"></div>
+
+<!-- Admin Auth Modal -->
+<div class="admin-overlay" id="adminOverlay">
+  <div class="admin-modal" role="dialog" aria-modal="true">
+    <div class="admin-lock-icon">🔐</div>
+    <h2>כניסת מנהל</h2>
+    <p class="admin-sub">הורדת תוצאות מוגבלת למנהל בלבד</p>
+    <form id="adminForm" novalidate>
+      <div class="admin-field">
+        <label for="adminUser">שם משתמש</label>
+        <input type="text" id="adminUser" placeholder="שם משתמש" autocomplete="username">
+      </div>
+      <div class="admin-field">
+        <label for="adminPass">סיסמה</label>
+        <input type="password" id="adminPass" placeholder="סיסמה" autocomplete="current-password">
+      </div>
+      <div class="admin-error" id="adminError"></div>
+      <button type="submit" class="admin-submit">כניסה והורדה ⬇</button>
+    </form>
+    <span class="admin-cancel" id="adminCancel">ביטול</span>
+  </div>
+</div>
+
+<!-- Excel Download FAB -->
+<button class="excel-fab" id="excelFab" title="הורד תוצאות לאקסל">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+    <line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 17 15 14"/>
+  </svg>
+  <span class="fab-label">הורד תוצאות Excel</span>
+</button>
+
+<!-- Lock Admin FAB -->
+<button class="lock-fab" id="lockFab" title="ניהול נעילת בחנים">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+  <span>ניהול בחנים</span>
+</button>
+
+<!-- Lock Panel Overlay -->
+<div class="lock-panel-overlay" id="lockPanelOverlay">
+  <div class="lock-panel-modal" role="dialog" aria-modal="true">
+    <div class="lp-icon">🔐</div>
+    <h2>ניהול נעילת בחנים</h2>
+    <p class="lp-sub">פתח או נעל בחנים לכלל הסטודנטים</p>
+    <div id="lockQuizList"></div>
+    <div class="lp-status" id="lpStatus"></div>
+    <button class="lp-save-btn" id="lpSaveBtn">שמור שינויים 💾</button>
+    <span class="lp-close-btn" id="lpCloseBtn">סגור</span>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <p>מבוא למערכות מידע &copy; 2026 &mdash; כל הזכויות שמורות לגב&#39; יעל לוי-מימון</p>
+  </div>
+</footer>
+
+<script>
+/* ── THREE.JS NEURAL NETWORK ─────────────────────────────────────── */
+(function initThree(){
+  const canvas=document.getElementById('three-bg');
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(75,window.innerWidth/window.innerHeight,0.1,1000);
+  camera.position.z=50;
+  const count=2200;
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(count*3);
+  const colors=new Float32Array(count*3);
+  const sizes=new Float32Array(count);
+  const cyan=new THREE.Color(0x00d4ff),purple=new THREE.Color(0x7b2ff7),pink=new THREE.Color(0xff2d95);
+  for(let i=0;i<count;i++){
+    pos[i*3]=(Math.random()-.5)*140;
+    pos[i*3+1]=(Math.random()-.5)*140;
+    pos[i*3+2]=(Math.random()-.5)*120;
+    const t=Math.random();
+    const c=t<.5?new THREE.Color().lerpColors(cyan,purple,t*2):new THREE.Color().lerpColors(purple,pink,(t-.5)*2);
+    colors[i*3]=c.r;colors[i*3+1]=c.g;colors[i*3+2]=c.b;
+    sizes[i]=Math.random()*.6+.1;
+  }
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  geo.setAttribute('color',new THREE.BufferAttribute(colors,3));
+  geo.setAttribute('size',new THREE.BufferAttribute(sizes,1));
+  const mat=new THREE.PointsMaterial({size:0.35,vertexColors:true,transparent:true,opacity:.75,sizeAttenuation:true});
+  const points=new THREE.Points(geo,mat);
+  scene.add(points);
+  // Neural connections
+  const lineMat=new THREE.LineBasicMaterial({color:0x00d4ff,transparent:true,opacity:.055});
+  const lineGeo=new THREE.BufferGeometry();
+  const linePos=[];
+  for(let i=0;i<280;i++){
+    const a=Math.floor(Math.random()*count),b=Math.floor(Math.random()*count);
+    linePos.push(pos[a*3],pos[a*3+1],pos[a*3+2],pos[b*3],pos[b*3+1],pos[b*3+2]);
+  }
+  lineGeo.setAttribute('position',new THREE.Float32BufferAttribute(linePos,3));
+  scene.add(new THREE.LineSegments(lineGeo,lineMat));
+  let mx=0,my=0,t=0;
+  document.addEventListener('mousemove',e=>{mx=(e.clientX/window.innerWidth-.5)*2;my=(e.clientY/window.innerHeight-.5)*2});
+  function animate(){
+    requestAnimationFrame(animate);
+    t+=.005;
+    points.rotation.y+=.0004;
+    points.rotation.x+=.00018;
+    // subtle breathing scale
+    const scale=1+Math.sin(t)*.015;
+    points.scale.set(scale,scale,scale);
+    camera.position.x+=(mx*6-camera.position.x)*.022;
+    camera.position.y+=(-my*6-camera.position.y)*.022;
+    camera.lookAt(scene.position);
+    renderer.render(scene,camera);
+  }
+  animate();
+  window.addEventListener('resize',()=>{
+    camera.aspect=window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth,window.innerHeight);
+  });
+})();
+
+/* ── MATRIX RAIN ──────────────────────────────────────────────────── */
+(function initMatrix(){
+  const canvas=document.getElementById('matrix-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const cols=Math.floor(canvas.width/20);
+  const drops=Array(cols).fill(1);
+  const chars='アイウエオカキクケコ01サシスセソタチ10ツテトナニ01ヌネノハヒ10フヘホ'.split('');
+  function draw(){
+    ctx.fillStyle='rgba(7,7,20,.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#00d4ff';
+    ctx.font='14px monospace';
+    drops.forEach((y,i)=>{
+      const ch=chars[Math.floor(Math.random()*chars.length)];
+      ctx.fillText(ch,i*20,y*20);
+      if(y*20>canvas.height&&Math.random()>.975)drops[i]=0;
+      drops[i]++;
+    });
+  }
+  setInterval(draw,55);
+  window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
+})();
+
+/* ── CURSOR TRAIL ─────────────────────────────────────────────────── */
+(function initCursor(){
+  const canvas=document.getElementById('cursor-canvas');
+  const ctx=canvas.getContext('2d');
+  canvas.width=window.innerWidth;canvas.height=window.innerHeight;
+  const particles=[];
+  let mx=0,my=0;
+  document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;
+    for(let i=0;i<3;i++){
+      particles.push({x:mx,y:my,vx:(Math.random()-.5)*1.5,vy:(Math.random()-.5)*1.5-1,life:1,hue:Math.random()*60+180});
+    }
+  });
+  function loop(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx;p.y+=p.vy;p.life-=.04;p.vy+=.05;
+      if(p.life<=0){particles.splice(i,1);continue}
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,2.5*p.life,0,Math.PI*2);
+      ctx.fillStyle=`hsla(${p.hue},100%,65%,${p.life*.7})`;
+      ctx.shadowColor=`hsla(${p.hue},100%,65%,1)`;
+      ctx.shadowBlur=8;
+      ctx.fill();
+    }
+    requestAnimationFrame(loop);
+  }
+  loop();
+  window.addEventListener('resize',()=>{canvas.width=window.innerWidth;canvas.height=window.innerHeight});
+})();
+
+/* ── COUNTER ANIMATION ────────────────────────────────────────────── */
+(function initCounters(){
+  const nums=document.querySelectorAll('.stat-num[data-count]');
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{
+      if(!e.isIntersecting)return;
+      const el=e.target,target=+el.dataset.count;
+      let cur=0;const step=target/40;
+      const t=setInterval(()=>{cur=Math.min(cur+step,target);el.textContent=Math.round(cur);if(cur>=target)clearInterval(t)},30);
+      io.unobserve(el);
+    });
+  },{threshold:.5});
+  nums.forEach(n=>io.observe(n));
+})();
+
+/* ── ID VALIDATION ────────────────────────────────────────────────── */
+const studentIdInput=document.getElementById('studentId');
+const idHint=document.getElementById('idHint');
+const idFill=document.getElementById('idProgressFill');
+studentIdInput.addEventListener('input',function(){
+  this.value=this.value.replace(/[^0-9]/g,'');
+  const len=this.value.length;
+  const pct=Math.round(len/9*100);
+  idFill.style.width=pct+'%';
+  if(len===0){
+    idHint.className='id-hint neutral';idHint.textContent='יש להזין בדיוק 9 ספרות';
+    idFill.style.background='var(--cyan)';this.classList.remove('valid','invalid');
+  }else if(len<9){
+    idHint.className='id-hint bad';idHint.textContent=`${len}/9 ספרות — עוד ${9-len} חסרות`;
+    idFill.style.background='var(--pink)';this.classList.remove('valid');this.classList.add('invalid');
+  }else{
+    idHint.className='id-hint good';idHint.textContent='✓ תעודת זהות תקינה';
+    idFill.style.background='var(--green)';this.classList.remove('invalid');this.classList.add('valid');
+  }
+});
+
+/* ── REGISTRATION ─────────────────────────────────────────────────── */
+const regForm=document.getElementById('regForm');
+const regCard=document.getElementById('regCard');
+const regSuccess=document.getElementById('regSuccess');
+const welcomeMsg=document.getElementById('welcomeMsg');
+
+regForm.addEventListener('submit',e=>{
+  e.preventDefault();
+  const firstName=document.getElementById('firstName').value.trim();
+  const lastName=document.getElementById('lastName').value.trim();
+  const id=document.getElementById('studentId').value.trim();
+  if(!firstName){showToast('יש להזין שם פרטי','error');return}
+  if(!lastName){showToast('יש להזין שם משפחה','error');return}
+  if(!/^\d{9}$/.test(id)){showToast('תעודת הזהות חייבת להכיל בדיוק 9 ספרות','error');return}
+  state.student={name:`${firstName} ${lastName}`,id};
+  regCard.classList.add('hidden');
+  regSuccess.classList.remove('hidden');
+  typeText(welcomeMsg,`שלום ${firstName} ${lastName}, בהצלחה בבחנים! 🚀`);
+  renderQuizGrid();
+});
+
+function typeText(el,text){
+  el.textContent='';let i=0;
+  const t=setInterval(()=>{el.textContent+=text[i];i++;if(i>=text.length)clearInterval(t)},38);
+}
+
+/* ── QUIZ DATA ────────────────────────────────────────────────────── */
+const quizData=[
+{id:1,title:"מושגי יסוד ורכיבים מרכזיים במערכות מידע",source:"מצגת 1 חלק 1",emoji:"💻",questions:[
+  {q:"מהם ארבעת רכיבי הליבה של מערכת מידע?",options:["אנשים, תהליכים, טכנולוגיה, מידע","חומרה, תוכנה, נתונים, תהליכים עסקיים","שרתים, רשתות, אחסון, תקשורת","קלט, עיבוד, פלט, משוב"],answer:1},
+  {q:"מהו ההבדל בין נתונים למידע?",options:["אין הבדל - שניהם זהים","נתונים הם פריטי מידע גולמיים ללא הקשר, מידע הוא נתונים מעובדים בעלי משמעות","מידע הוא גולמי ונתונים הם מעובדים","נתונים מגיעים מהמחשב ומידע מגיע מאנשים"],answer:1},
+  {q:"מערכת TPS מיועדת בעיקר ל:",options:["הנהלה בכירה","מנהלי ביניים","דרג תפעולי - טיפול בעסקאות ופעולות יומיומיות","לקוחות חיצוניים"],answer:2},
+  {q:"כמה אחוז מהארגונים מדווחים על תלות גבוהה במערכות מידע לתפעול השוטף?",options:["50%","65%","85%","95%"],answer:2},
+  {q:"מערכת EIS מיועדת ל:",options:["עובדים תפעוליים","מנהלי ביניים","הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות","לקוחות הארגון"],answer:2}
+]},
+{id:2,title:"סיווג (קלאסיפיקציה) של מערכות מידע",source:"מצגת 1 חלק 2",emoji:"🗂️",questions:[
+  {q:"מערכות מידע בארגון מסווגות לרוב ל-3 רמות. מהן?",options:["TPS, MIS, EIS","ERP, CRM, SCM","B2B, B2C, C2C","SaaS, PaaS, IaaS"],answer:0},
+  {q:"מערכת MIS מספקת:",options:["עיבוד עסקאות יומיומיות","דוחות ומידע ניהולי לקבלת החלטות למנהלי ביניים","ניבוי מגמות עתידיות","ממשק משתמש ללקוחות"],answer:1},
+  {q:"מערכות DSS מסייעות בעיקר ב:",options:["תיעוד עסקאות","הפקת דוחות שגרתיים","תמיכה בקבלת החלטות באמצעות כלי ניתוח מתקדמים","ניהול מלאי"],answer:2},
+  {q:'באיזו מערכת ניתן לענות על "מי צפוי להתפטר?"',options:["TPS","MIS","EIS - מערכות ניבוי וחיזוי","CRM"],answer:2},
+  {q:"מדוע חשוב שנתוני בסיס הנתונים יהיו מלאים ומדויקים?",options:["כדי לחסוך מקום באחסון","כדי שהמידע הניהולי לקבלת החלטות יהיה איכותי ומדויק","כדי לעמוד בדרישות חוקיות בלבד","כדי שהמערכת תפעל מהר יותר"],answer:1}
+]},
+{id:3,title:"אגף מערכות מידע בארגונים - תפקיד ה-CIO",source:"מצגת 2",emoji:"🏢",questions:[
+  {q:"מהו תפקיד ה-CIO בארגון?",options:["מנהל כספים","מנהל בכיר האחראי על כל היבטי טכנולוגיית המידע בארגון","מנהל שיווק דיגיטלי","מנהל משאבי אנוש"],answer:1},
+  {q:"מהו מודל In House בתפעול מערכות מידע?",options:["שימוש בשירותי ענן בלבד","כל פונקציות ה-IT מבוצעות על ידי עובדי הארגון עצמו","מיקור חוץ מלא","שימוש בפרילנסרים"],answer:1},
+  {q:"מהו TCO (Total Cost of Ownership)?",options:["עלות הרכישה הראשונית בלבד","סך כל ההוצאות הקשורות למערכת לאורך מחזור החיים המלא","עלות תחזוקה שנתית","עלות העובדים באגף IT"],answer:1},
+  {q:"מהו היתרון המרכזי של מודל Outsourcing?",options:["שליטה מלאה על תהליכים","שימור ידע בארגון","חיסכון בעלויות וגישה למומחיות טכנולוגית מתקדמת","אבטחת מידע מקסימלית"],answer:2},
+  {q:"במודל היברידי, אילו פונקציות נשארות בארגון?",options:["Help Desk ותמיכה טכנית","פונקציות אסטרטגיות ורגישות כמו אבטחת מידע וניהול מערכות ליבה","שירותי דואר אלקטרוני","תחזוקת תחנות קצה"],answer:1}
+]},
+{id:4,title:"כוח אדם מחשובי בהייטק",source:"מצגת 3",emoji:"👨‍💻",questions:[
+  {q:"כמה אנשים מועסקים בהייטק בישראל נכון ל-2024?",options:["100,000+","200,000+","400,000+","600,000+"],answer:2},
+  {q:"מהו ההבדל בין מפתח Front End למפתח Back End?",options:["אין הבדל","Front End מפתח ממשק משתמש חזותי, Back End מפתח צד שרת ותשתיות","Front End עובד על חומרה, Back End על תוכנה","Front End עובד בענן, Back End מקומית"],answer:1},
+  {q:"מהו תפקיד מנתח מערכות (System Analyst)?",options:["כתיבת קוד בלבד","גשר בין העולם העסקי לטכנולוגי - תרגום צרכים עסקיים למפרטים טכניים","ניהול תקציבים","עיצוב גרפי"],answer:1},
+  {q:"מהם שלושת סוגי מומחי הסייבר שנסקרו?",options:["מתכנתים, מעצבים, מנהלים","מגן סייבר, בודק חדירות, חוקר זדוניות","מנהל רשת, מנהל שרתים, מנהל אחסון","DBA, DevOps, QA"],answer:1},
+  {q:"כמה אחוז מהייצוא הישראלי מקורו בהייטק?",options:["25%","37%","52%","68%"],answer:2}
+]},
+{id:5,title:"טכנולוגיות עסקיות וסביבת ERP",source:"מצגת 4 חלק 1",emoji:"⚙️",questions:[
+  {q:"מהי מערכת ERP?",options:["מערכת לניהול דואר אלקטרוני","מערכת הכוללת חבילת יישומים לכל תחומי הפעילות הארגונית עם בסיס נתונים אחד","מערכת לניהול לקוחות בלבד","מערכת הפעלה למחשבים"],answer:1},
+  {q:"מהו BPR (Business Process Reengineering)?",options:["גיבוי נתונים","הגדרה מחדש של תהליכים עסקיים ליעילות גבוהה יותר","רכישת תוכנה חדשה","פיטורי עובדים"],answer:1},
+  {q:'מהי הבעיה של "איי מידע מבודדים" בארגון?',options:["עלות גבוהה","חוסר אינטגרציה, כפילויות וחוסר התאמה בנתונים","מהירות נמוכה","עיצוב לא יפה"],answer:1},
+  {q:"מהי ההתפתחות ההיסטורית הנכונה?",options:["ERP > MRP > MRP II","MRP > MRP II > ERP","CRM > ERP > MRP","SCM > ERP > MRP"],answer:1},
+  {q:"מהו היתרון המרכזי של ERP ברמה הניהולית?",options:["עיצוב יפה","תשתית נתונים אינטגרטיבית עם שקיפות ומידע בזמן אמת לקבלת החלטות","חיסכון בחשמל","קלות התקנה"],answer:1}
+]},
+{id:6,title:"מערכות מידע תפעוליות - CRM, HRMIS",source:"מצגת 4 חלק 2",emoji:"🤝",questions:[
+  {q:"מהי מערכת CRM?",options:["מערכת לניהול כוח אדם","מערכת לניהול קשרי לקוחות - ריכוז כל נקודות המגע עם הלקוח","מערכת לניהול מלאי","מערכת לניהול פיננסים"],answer:1},
+  {q:"מהו SLA (Service Level Agreement)?",options:["סוג של תוכנה","הסכם רמת שירות המגדיר סטנדרטים לזמני תגובה ופתרון","שפת תכנות","סוג של חומרה"],answer:1},
+  {q:"מהם שלושת המרכיבים המרכזיים של CRM?",options:["חומרה, תוכנה, רשת","ניהול מכירות, שירות לקוחות, שיווק","קלט, עיבוד, פלט","מנהלים, עובדים, לקוחות"],answer:1},
+  {q:"מערכת HRMIS מנהלת את:",options:["המלאי במחסנים","מחזור החיים המלא של העובד - מגיוס ועד סיום העסקה","הכספים בארגון","הלקוחות של הארגון"],answer:1},
+  {q:"מהו היתרון של אינטגרציה מלאה בין ERP, CRM ו-HRMIS?",options:["עלות נמוכה יותר בלבד","עלייה של 20%-25% ביעילות התפעולית וחיסכון של 10%-15% במשאבים","עיצוב אחיד בלבד","מהירות גבוהה בלבד"],answer:1}
+]},
+{id:7,title:"מערכות דיגיטליות לעסקים",source:"מצגת 5",emoji:"🌐",questions:[
+  {q:"מהי טרנספורמציה דיגיטלית?",options:["קניית מחשבים חדשים","תהליך שילוב טכנולוגיות דיגיטליות בכל היבטי הפעילות העסקית","יצירת אתר אינטרנט","מעבר לעבודה מהבית"],answer:1},
+  {q:"מהו פורטל ארגוני?",options:["אתר מכירות","מערכת המרכזת גישה למידע, משאבים וכלים פנימיים של הארגון","רשת חברתית","מערכת דואר אלקטרוני"],answer:1},
+  {q:"מהם שלושת סוגי אתרי מסחר אלקטרוני העיקריים?",options:["קטן, בינוני, גדול","B2C, B2B, C2C","מקומי, ארצי, בינלאומי","חינמי, בסיסי, פרימיום"],answer:1},
+  {q:'מהו העיקרון החשוב ביותר בתכנון UX/UI?',options:["שימוש בצבעים רבים",'פשטות ובהירות - "שלושה קליקים למטרה"',"הוספת אנימציות רבות","שימוש בטקסט רב"],answer:1},
+  {q:"כמה אחוז מהמשתמשים מעדיפים אפליקציה על פני אתר מותאם?",options:["35%","50%","67%","80%"],answer:2}
+]},
+{id:8,title:"פלטפורמת חומרה ומחשוב ענן",source:"מצגת 6",emoji:"☁️",questions:[
+  {q:"מהו Mainframe (מחשב מרכזי)?",options:["מחשב נייד","מחשב בעל עוצמת עיבוד אדירה התומך באלפי משתמשים במקביל","מחשב אישי","טלפון חכם"],answer:1},
+  {q:"מהו שרת (Server)?",options:["תוכנה לגלישה באינטרנט","מחשב המספק שירותים ומשאבים למחשבים אחרים ברשת","מדפסת רשתית","כבל רשת"],answer:1},
+  {q:"מהי מערכת הפעלה?",options:["חומרה פיזית","התשתית התוכנתית המאפשרת הפעלת יישומים שונים","אפליקציית מובייל","רשת תקשורת"],answer:1},
+  {q:"מהו Data Center?",options:["חנות מחשבים","מתקן המרכז תשתיות חומרה, שרתים ומערכות אחסון","משרד מתכנתים","אתר אינטרנט"],answer:1},
+  {q:"מה ההבדל בין Software ל-Hardware?",options:["אין הבדל","Hardware - רכיבים פיזיים, Software - תוכנות ויישומים","Software הוא חומרה ו-Hardware הוא תוכנה","שניהם סוגי תוכנה"],answer:1}
+]},
+{id:9,title:"סייבר, אבטחת מידע ורגולציה",source:"מצגת 7",emoji:"🔒",questions:[
+  {q:"מהי מתקפת פישינג (Phishing)?",options:["מתקפה פיזית על מחשבים","מתקפת התחזות שמטרתה לגנוב מידע רגיש","וירוס מחשב","תקלה ברשת"],answer:1},
+  {q:"מהי מתקפת כופר (Ransomware)?",options:["גניבת מחשבים","תוכנה זדונית שמצפינה קבצים ודורשת תשלום תמורת פענוח","מחיקת אתרי אינטרנט","חסימת שירותי דואר"],answer:1},
+  {q:"מהו עקרון ה-3-2-1 בגיבויים?",options:["3 עותקים, 2 סוגי מדיה, 1 באתר מרוחק","3 גיבויים ביום, 2 בשבוע, 1 בחודש","3 שרתים, 2 רשתות, 1 ענן","3 סיסמאות, 2 משתמשים, 1 מנהל"],answer:0},
+  {q:"מהו GDPR?",options:["סוג של מחשב","רגולציה אירופית להגנה על נתונים אישיים","שפת תכנות","מערכת הפעלה"],answer:1},
+  {q:"מהו אימות דו-שלבי (2FA)?",options:["סיסמה כפולה","שיטת אימות הדורשת הוכחת זהות באמצעות שני גורמים שונים","שני מחשבים","שתי רשתות"],answer:1}
+]},
+{id:10,title:"BI ומהפכת הבינה המלאכותית",source:"מצגת 8-9",emoji:"🧠",questions:[
+  {q:"מהי בינה עסקית (BI)?",options:["סוג של בינה מלאכותית","תהליך המרת נתונים גולמיים למידע בעל ערך לקבלת החלטות עסקיות","תוכנה לניהול פרויקטים","מערכת הפעלה"],answer:1},
+  {q:"מהו ההבדל בין Data Warehouse ל-Data Lake?",options:["אין הבדל","Data Warehouse - נתונים מובנים ומאורגנים; Data Lake - נתונים גולמיים בכל פורמט","Data Lake יקר יותר","Data Warehouse חדש יותר"],answer:1},
+  {q:"מהו תהליך ETL?",options:["סוג של מחשב","Extract, Transform, Load - שליפה, עיבוד וטעינה של נתונים","שפת תכנות","פרוטוקול תקשורת"],answer:1},
+  {q:"מהו ההבדל בין AI קלאסית ל-Generative AI?",options:["אין הבדל","קלאסית מזהה תבניות קיימות, Generative AI יוצרת תוכן חדש ומקורי","Generative AI ישנה יותר","קלאסית יקרה יותר"],answer:1},
+  {q:"מהם 5 ה-V של Big Data?",options:["Volume, Velocity, Variety, Veracity, Value","Virtual, Visual, Vocal, Vertical, Variable","Vector, Voltage, Volume, Vacuum, Velocity","Video, Voice, Virtual, Value, Vision"],answer:0}
+]}
+];
+
+const state={student:null,currentQuiz:null,currentQ:0,answers:[],scores:{},locks:{},inResults:false};
+// Default: all quizzes locked until server responds
+for(let i=1;i<=10;i++) state.locks[i]=false;
+
+/* ── QUIZ ICONS (animated SVG) ────────────────────────────────────── */
+const quizIcons=[
+/* 1 – Circuit Core */ `<svg class="qi" viewBox="0 0 80 80"><circle cx="40" cy="40" r="32" fill="none" stroke="#00d4ff" stroke-width=".5" stroke-dasharray="6 3" style="animation:qi_spin 14s linear infinite;transform-origin:40px 40px"/><circle cx="40" cy="40" r="21" fill="none" stroke="#7b2ff7" stroke-width="1" stroke-dasharray="4 2" style="animation:qi_spinr 7s linear infinite;transform-origin:40px 40px"/><line x1="40" y1="8" x2="40" y2="19" stroke="#00d4ff" stroke-width="1.6"/><line x1="40" y1="61" x2="40" y2="72" stroke="#00d4ff" stroke-width="1.6"/><line x1="8" y1="40" x2="19" y2="40" stroke="#00d4ff" stroke-width="1.6"/><line x1="61" y1="40" x2="72" y2="40" stroke="#00d4ff" stroke-width="1.6"/><rect x="36" y="4" width="8" height="8" rx="2" fill="#00d4ff" style="filter:drop-shadow(0 0 6px #00d4ff)"/><rect x="36" y="68" width="8" height="8" rx="2" fill="#00d4ff" style="filter:drop-shadow(0 0 6px #00d4ff)"/><rect x="4" y="36" width="8" height="8" rx="2" fill="#00d4ff" style="filter:drop-shadow(0 0 6px #00d4ff)"/><rect x="68" y="36" width="8" height="8" rx="2" fill="#00d4ff" style="filter:drop-shadow(0 0 6px #00d4ff)"/><circle cx="40" cy="40" r="11" fill="rgba(0,212,255,.1)" style="animation:qi_pulse 2.2s ease-in-out infinite;transform-origin:40px 40px"/><circle cx="40" cy="40" r="5" fill="#00d4ff" style="filter:drop-shadow(0 0 10px #00d4ff)"/><circle cx="40" cy="40" r="2" fill="#fff"/></svg>`,
+/* 2 – IS Pyramid */ `<svg class="qi" viewBox="0 0 80 80"><polygon points="40,6 56,26 24,26" fill="rgba(255,45,149,.12)" stroke="#ff2d95" stroke-width="1.8" style="filter:drop-shadow(0 0 4px #ff2d95)"/><polygon points="24,29 58,29 64,49 16,49" fill="rgba(123,47,247,.12)" stroke="#7b2ff7" stroke-width="1.8" style="filter:drop-shadow(0 0 4px #7b2ff7)"/><polygon points="16,52 64,52 72,72 8,72" fill="rgba(0,212,255,.12)" stroke="#00d4ff" stroke-width="1.8" style="filter:drop-shadow(0 0 4px #00d4ff)"/><text x="40" y="21" text-anchor="middle" font-family="monospace" font-size="7" fill="#ff2d95" font-weight="bold">EIS</text><text x="40" y="44" text-anchor="middle" font-family="monospace" font-size="7" fill="#7b2ff7" font-weight="bold">MIS</text><text x="40" y="65" text-anchor="middle" font-family="monospace" font-size="7" fill="#00d4ff" font-weight="bold">TPS</text><rect x="8" y="0" width="64" height="1.5" rx="1" fill="rgba(255,255,255,.85)" style="filter:drop-shadow(0 0 4px #fff);animation:qi_scan_py 3.5s ease-in-out infinite;transform-origin:40px 38px"/><circle cx="40" cy="6" r="2.5" fill="#ff2d95"/></svg>`,
+/* 3 – CIO Orbit */ `<svg class="qi" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" fill="none" stroke="rgba(0,212,255,.18)" stroke-width=".8" stroke-dasharray="3 3"/><circle cx="40" cy="40" r="20" fill="none" stroke="rgba(123,47,247,.2)" stroke-width=".8" stroke-dasharray="3 3"/><g style="animation:qi_spin 4.5s linear infinite;transform-origin:40px 40px"><circle cx="70" cy="40" r="4.5" fill="#00d4ff" style="filter:drop-shadow(0 0 6px #00d4ff)"/></g><g style="animation:qi_spinr 7s linear infinite;transform-origin:40px 40px"><circle cx="60" cy="40" r="3.5" fill="#ff2d95" style="filter:drop-shadow(0 0 6px #ff2d95)"/></g><g style="animation:qi_spin 11s linear infinite;transform-origin:40px 40px"><circle cx="20" cy="40" r="4" fill="#7b2ff7" style="filter:drop-shadow(0 0 6px #7b2ff7)"/></g><circle cx="40" cy="40" r="12" fill="rgba(0,212,255,.1)" stroke="#00d4ff" stroke-width="1.5" style="filter:drop-shadow(0 0 10px #00d4ff)"/><circle cx="40" cy="40" r="12" fill="rgba(0,212,255,.0)" style="animation:qi_pulse 2s ease-in-out infinite;transform-origin:40px 40px"/><text x="40" y="44" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#00d4ff" font-weight="bold">CIO</text></svg>`,
+/* 4 – DNA Helix */ `<svg class="qi" viewBox="0 0 80 80"><path d="M28,6 C18,18 30,30 20,42 C10,54 22,66 28,74" fill="none" stroke="#00d4ff" stroke-width="2.2" style="filter:drop-shadow(0 0 4px #00d4ff)"/><path d="M52,6 C62,18 50,30 60,42 C70,54 58,66 52,74" fill="none" stroke="#7b2ff7" stroke-width="2.2" style="filter:drop-shadow(0 0 4px #7b2ff7)"/><line x1="28" y1="16" x2="52" y2="16" stroke="#ff2d95" stroke-width="1.6" style="filter:drop-shadow(0 0 3px #ff2d95)"/><line x1="26" y1="26" x2="54" y2="26" stroke="rgba(255,215,0,.9)" stroke-width="1.6"/><line x1="24" y1="36" x2="56" y2="36" stroke="#00ff88" stroke-width="1.6" style="filter:drop-shadow(0 0 3px #00ff88)"/><line x1="24" y1="46" x2="56" y2="46" stroke="#ff2d95" stroke-width="1.6"/><line x1="26" y1="56" x2="54" y2="56" stroke="rgba(255,215,0,.9)" stroke-width="1.6"/><line x1="28" y1="65" x2="52" y2="65" stroke="#00ff88" stroke-width="1.6"/><circle cx="40" cy="16" r="3" fill="#ff2d95"/><circle cx="40" cy="36" r="3" fill="#00ff88"/><circle cx="40" cy="56" r="3" fill="#ff2d95"/><circle cx="40" cy="36" r="10" fill="rgba(0,255,136,.06)" style="animation:qi_breathe 2.2s ease-in-out infinite;transform-origin:40px 36px"/></svg>`,
+/* 5 – ERP Hexagons */ `<svg class="qi" viewBox="0 0 80 80"><polygon points="40,4 56,13 56,31 40,40 24,31 24,13" fill="rgba(0,212,255,.08)" stroke="#00d4ff" stroke-width="1.6" style="filter:drop-shadow(0 0 5px #00d4ff)"/><polygon points="40,8 53,16 53,28 40,36 27,28 27,16" fill="none" stroke="rgba(0,212,255,.25)" stroke-width=".6" stroke-dasharray="3 2" style="animation:qi_spin 10s linear infinite;transform-origin:40px 22px"/><text x="40" y="26" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#00d4ff" font-weight="bold">ERP</text><polygon points="20,44 32,37 32,51 20,58 8,51 8,37" fill="rgba(123,47,247,.1)" stroke="#7b2ff7" stroke-width="1.4"/><text x="20" y="51" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#7b2ff7" font-weight="bold">SCM</text><polygon points="60,44 72,37 72,51 60,58 48,51 48,37" fill="rgba(255,45,149,.1)" stroke="#ff2d95" stroke-width="1.4"/><text x="60" y="51" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#ff2d95" font-weight="bold">CRM</text><line x1="32" y1="49" x2="48" y2="49" stroke="rgba(255,215,0,.7)" stroke-width="1.2" stroke-dasharray="3 2" style="animation:qi_flow 2s linear infinite"/><line x1="30" y1="41" x2="40" y2="38" stroke="rgba(0,212,255,.5)" stroke-width="1.2"/><line x1="50" y1="41" x2="40" y2="38" stroke="rgba(0,212,255,.5)" stroke-width="1.2"/><circle cx="40" cy="62" r="2.5" fill="rgba(255,215,0,.7)"/><line x1="20" y1="58" x2="40" y2="62" stroke="rgba(255,215,0,.3)" stroke-width=".8"/><line x1="60" y1="58" x2="40" y2="62" stroke="rgba(255,215,0,.3)" stroke-width=".8"/></svg>`,
+/* 6 – Network Graph */ `<svg class="qi" viewBox="0 0 80 80"><line x1="40" y1="40" x2="16" y2="18" stroke="rgba(0,212,255,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flow 3s linear infinite"/><line x1="40" y1="40" x2="64" y2="18" stroke="rgba(0,212,255,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flowR 2.5s linear infinite"/><line x1="40" y1="40" x2="10" y2="48" stroke="rgba(123,47,247,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flow 4s linear infinite"/><line x1="40" y1="40" x2="70" y2="48" stroke="rgba(123,47,247,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flowR 3.5s linear infinite"/><line x1="40" y1="40" x2="24" y2="68" stroke="rgba(255,45,149,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flow 2.8s linear infinite"/><line x1="40" y1="40" x2="56" y2="68" stroke="rgba(255,45,149,.5)" stroke-width="1" stroke-dasharray="3 2" style="animation:qi_flowR 3.2s linear infinite"/><circle cx="16" cy="18" r="5" fill="rgba(0,212,255,.2)" stroke="#00d4ff" stroke-width="1.3" style="filter:drop-shadow(0 0 5px #00d4ff)"/><circle cx="64" cy="18" r="5" fill="rgba(0,212,255,.2)" stroke="#00d4ff" stroke-width="1.3" style="filter:drop-shadow(0 0 5px #00d4ff)"/><circle cx="10" cy="48" r="4.5" fill="rgba(123,47,247,.2)" stroke="#7b2ff7" stroke-width="1.3"/><circle cx="70" cy="48" r="4.5" fill="rgba(123,47,247,.2)" stroke="#7b2ff7" stroke-width="1.3"/><circle cx="24" cy="68" r="4.5" fill="rgba(255,45,149,.2)" stroke="#ff2d95" stroke-width="1.3"/><circle cx="56" cy="68" r="4.5" fill="rgba(255,45,149,.2)" stroke="#ff2d95" stroke-width="1.3"/><circle cx="40" cy="40" r="12" fill="rgba(0,212,255,.08)" style="animation:qi_ripple 2.5s ease-out infinite;transform-origin:40px 40px"/><circle cx="40" cy="40" r="9" fill="rgba(0,212,255,.15)" stroke="#00d4ff" stroke-width="2" style="filter:drop-shadow(0 0 10px #00d4ff)"/><circle cx="40" cy="40" r="4" fill="#00d4ff"/></svg>`,
+/* 7 – Wireframe Globe */ `<svg class="qi" viewBox="0 0 80 80"><circle cx="40" cy="40" r="30" fill="rgba(0,212,255,.05)" stroke="#00d4ff" stroke-width="1.5" style="filter:drop-shadow(0 0 7px #00d4ff)"/><ellipse cx="40" cy="40" rx="30" ry="10" fill="none" stroke="rgba(0,212,255,.3)" stroke-width=".8"/><ellipse cx="40" cy="40" rx="30" ry="20" fill="none" stroke="rgba(0,212,255,.2)" stroke-width=".8"/><line x1="40" y1="10" x2="40" y2="70" stroke="rgba(0,212,255,.2)" stroke-width=".8"/><ellipse cx="40" cy="40" rx="15" ry="30" fill="none" stroke="rgba(0,212,255,.2)" stroke-width=".8"/><ellipse cx="40" cy="40" rx="38" ry="11" fill="none" stroke="#7b2ff7" stroke-width="1.3" stroke-dasharray="5 2" style="animation:qi_spin 7s linear infinite;transform-origin:40px 40px"/><g style="animation:qi_spin 7s linear infinite;transform-origin:40px 40px"><circle cx="78" cy="40" r="3.5" fill="#7b2ff7" style="filter:drop-shadow(0 0 6px #7b2ff7)"/></g><circle cx="30" cy="34" r="2.2" fill="#ff2d95" style="filter:drop-shadow(0 0 4px #ff2d95)"/><circle cx="53" cy="28" r="1.8" fill="#00ff88" style="filter:drop-shadow(0 0 4px #00ff88)"/><circle cx="47" cy="52" r="2" fill="#ffd700" style="filter:drop-shadow(0 0 4px #ffd700)"/></svg>`,
+/* 8 – Circuit Cloud */ `<svg class="qi" viewBox="0 0 80 80"><path d="M22,54 Q10,54 10,43 Q10,34 19,32 Q17,20 29,17 Q35,10 46,15 Q54,9 62,16 Q72,18 72,30 Q78,32 78,41 Q78,54 66,54 Z" fill="rgba(0,212,255,.06)" stroke="#00d4ff" stroke-width="1.5" style="filter:drop-shadow(0 0 7px #00d4ff)"/><line x1="24" y1="36" x2="36" y2="36" stroke="rgba(0,212,255,.8)" stroke-width="1.2"/><line x1="36" y1="36" x2="36" y2="46" stroke="rgba(0,212,255,.8)" stroke-width="1.2"/><line x1="36" y1="46" x2="48" y2="46" stroke="rgba(0,212,255,.8)" stroke-width="1.2"/><line x1="48" y1="36" x2="56" y2="36" stroke="rgba(0,212,255,.8)" stroke-width="1.2"/><line x1="48" y1="36" x2="48" y2="46" stroke="rgba(0,212,255,.8)" stroke-width="1.2"/><rect x="21" y="32.5" width="6" height="6" rx="1.5" fill="#00d4ff" style="filter:drop-shadow(0 0 4px #00d4ff)"/><rect x="33" y="43.5" width="6" height="6" rx="1.5" fill="#7b2ff7"/><rect x="45" y="32.5" width="6" height="6" rx="1.5" fill="#00d4ff"/><rect x="53" y="32.5" width="6" height="6" rx="1.5" fill="#7b2ff7"/><path d="M43,16 L36,32 L42,32 L38,48 L50,30 L43,30 Z" fill="#ffd700" style="filter:drop-shadow(0 0 8px #ffd700);animation:qi_breathe 1.4s ease-in-out infinite"/><line x1="28" y1="57" x2="25" y2="68" stroke="rgba(0,212,255,.55)" stroke-width="1.8" stroke-linecap="round"/><line x1="40" y1="57" x2="37" y2="70" stroke="rgba(0,212,255,.55)" stroke-width="1.8" stroke-linecap="round"/><line x1="52" y1="57" x2="49" y2="68" stroke="rgba(0,212,255,.55)" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+/* 9 – Cyber Shield */ `<svg class="qi" viewBox="0 0 80 80"><path d="M40,6 L66,17 L66,42 Q66,62 40,74 Q14,62 14,42 L14,17 Z" fill="rgba(0,212,255,.07)" stroke="#00d4ff" stroke-width="2" style="filter:drop-shadow(0 0 8px #00d4ff)"/><path d="M40,12 L60,21 L60,42 Q60,58 40,68 Q20,58 20,42 L20,21 Z" fill="none" stroke="rgba(0,212,255,.25)" stroke-width=".8"/><path d="M14,19 L22,19 M14,19 L14,27" stroke="#00d4ff" stroke-width="1.8"/><path d="M66,19 L58,19 M66,19 L66,27" stroke="#00d4ff" stroke-width="1.8"/><rect x="32" y="41" width="16" height="13" rx="2.5" fill="rgba(0,212,255,.18)" stroke="#00d4ff" stroke-width="1.3"/><path d="M35,41 L35,36 Q35,29 40,29 Q45,29 45,36 L45,41" fill="none" stroke="#00d4ff" stroke-width="1.6"/><circle cx="40" cy="46.5" r="2.2" fill="#00d4ff"/><rect x="39" y="46.5" width="2" height="4.5" rx="1" fill="#00d4ff"/><rect x="14" y="0" width="52" height="2" rx="1" fill="rgba(0,255,136,.9)" style="filter:drop-shadow(0 0 4px #00ff88);animation:qi_scan_sh 2.4s ease-in-out infinite;transform-origin:40px 40px"/><circle cx="40" cy="22" r="2.5" fill="#ff2d95" style="animation:qi_flicker 4s ease-in-out infinite"/><circle cx="26" cy="32" r="1.8" fill="#7b2ff7"/><circle cx="54" cy="32" r="1.8" fill="#7b2ff7"/></svg>`,
+/* 10 – Neural Brain */ `<svg class="qi" viewBox="0 0 80 80"><path d="M40,10 Q54,8 60,20 Q70,22 70,35 Q74,46 64,54 Q60,64 52,66 Q48,72 40,72 Q32,72 28,66 Q20,64 16,54 Q6,46 10,35 Q10,22 20,20 Q26,8 40,10 Z" fill="rgba(255,45,149,.07)" stroke="#ff2d95" stroke-width="1.5" style="filter:drop-shadow(0 0 6px #ff2d95)"/><path d="M40,18 Q50,22 48,34" fill="none" stroke="rgba(255,45,149,.3)" stroke-width="1.2"/><path d="M32,20 Q22,28 26,40" fill="none" stroke="rgba(255,45,149,.3)" stroke-width="1.2"/><path d="M50,52 Q60,44 56,34" fill="none" stroke="rgba(255,45,149,.3)" stroke-width="1.2"/><path d="M30,54 Q20,48 22,38" fill="none" stroke="rgba(255,45,149,.25)" stroke-width="1"/><circle cx="40" cy="38" r="5" fill="#7b2ff7" style="filter:drop-shadow(0 0 8px #7b2ff7)"/><circle cx="27" cy="28" r="3.5" fill="#7b2ff7" opacity=".85"/><circle cx="53" cy="28" r="3.5" fill="#7b2ff7" opacity=".85"/><circle cx="22" cy="48" r="3" fill="#7b2ff7" opacity=".75"/><circle cx="58" cy="48" r="3" fill="#7b2ff7" opacity=".75"/><circle cx="40" cy="58" r="3.5" fill="#7b2ff7" opacity=".85"/><line x1="40" y1="38" x2="27" y2="28" stroke="rgba(123,47,247,.65)" stroke-width="1.2" stroke-dasharray="2 2" style="animation:qi_flow 2s linear infinite"/><line x1="40" y1="38" x2="53" y2="28" stroke="rgba(123,47,247,.65)" stroke-width="1.2" stroke-dasharray="2 2" style="animation:qi_flowR 2.4s linear infinite"/><line x1="40" y1="38" x2="22" y2="48" stroke="rgba(123,47,247,.55)" stroke-width="1.2" stroke-dasharray="2 2" style="animation:qi_flow 3s linear infinite"/><line x1="40" y1="38" x2="58" y2="48" stroke="rgba(123,47,247,.55)" stroke-width="1.2" stroke-dasharray="2 2" style="animation:qi_flowR 1.8s linear infinite"/><line x1="40" y1="38" x2="40" y2="58" stroke="rgba(123,47,247,.55)" stroke-width="1.2" stroke-dasharray="2 2" style="animation:qi_flow 2.6s linear infinite"/><circle cx="27" cy="28" r="7" fill="none" stroke="rgba(0,212,255,.7)" stroke-width="1" style="animation:qi_ripple 3s ease-out infinite;transform-origin:27px 28px"/><circle cx="53" cy="28" r="7" fill="none" stroke="rgba(255,45,149,.7)" stroke-width="1" style="animation:qi_ripple 3s ease-out 1.5s infinite;transform-origin:53px 28px"/><text x="40" y="42" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#00d4ff" font-weight="bold">AI·BI</text></svg>`
+];
+
+/* ── QUIZ GRID ────────────────────────────────────────────────────── */
+const quizGrid=document.getElementById('quizGrid');
+function renderQuizGrid(){
+  quizGrid.innerHTML='';
+  quizData.forEach((quiz,i)=>{
+    const done=state.scores[quiz.id];
+    const notReg=!state.student;
+    const isLocked=!state.locks[quiz.id];
+    const blocked=notReg||isLocked;
+    const card=document.createElement('div');
+    card.className='quiz-card'+(done?' completed':'')+(blocked?' locked':'');
+    card.innerHTML=`
+      <div class="card-top-bar"></div>
+      <div class="qc-tl"></div><div class="qc-tr"></div>
+      <div class="qc-bl"></div><div class="qc-br"></div>
+      <span class="badge">${done?`✓ ${done.score*20} נק'`:`בוחן ${quiz.id}`}</span>
+      <span class="emoji">${quizIcons[i]}</span>
+      <h3>${quiz.title}</h3>
+      <div class="card-meta">
+        <span>${quiz.source}</span>
+        <span>${quiz.questions.length} שאלות</span>
+      </div>
+      ${notReg
+        ?`<div class="lock-overlay">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px rgba(0,212,255,.8))"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span style="color:var(--cyan)">הרשמה נדרשת</span>
+          </div>`
+        :isLocked
+          ?`<div class="lock-overlay"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ff6b35" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 0 8px rgba(255,107,53,.7))"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>נעול</span></div>`
+          :''}`;
+    card.style.animation=`heroIn .6s ease-out ${i*.06}s both`;
+    card.addEventListener('click',()=>openQuiz(quiz));
+    quizGrid.appendChild(card);
+  });
+}
+renderQuizGrid();
+
+/* ── 3D TILT ON CARDS ─────────────────────────────────────────────── */
+document.addEventListener('mousemove',e=>{
+  document.querySelectorAll('.quiz-card').forEach(card=>{
+    const r=card.getBoundingClientRect();
+    const x=(e.clientX-r.left)/r.width-.5;
+    const y=(e.clientY-r.top)/r.height-.5;
+    if(Math.abs(x)<1.2&&Math.abs(y)<1.2)
+      card.style.transform=`perspective(900px) rotateY(${x*9}deg) rotateX(${-y*9}deg) translateZ(12px)`;
+  });
+});
+document.addEventListener('mouseleave',()=>{
+  document.querySelectorAll('.quiz-card').forEach(c=>c.style.transform='');
+});
+quizGrid.addEventListener('mouseleave',()=>{
+  document.querySelectorAll('.quiz-card').forEach(c=>c.style.transform='');
+});
+
+/* ── MODAL ────────────────────────────────────────────────────────── */
+const modalOverlay=document.getElementById('modalOverlay');
+const modalContent=document.getElementById('modalContent');
+const modalClose=document.getElementById('modalClose');
+function openModal(){modalOverlay.classList.add('active');document.body.style.overflow='hidden'}
+function closeModal(){state.inResults=false;modalOverlay.classList.remove('active');document.body.style.overflow=''}
+modalClose.addEventListener('click',closeModal);
+modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay&&!state.inResults)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!state.inResults)closeModal()});
+
+function openQuiz(quiz){
+  if(!state.student){showToast('יש להירשם לפני התחלת הבוחן','error');document.getElementById('registration').scrollIntoView({behavior:'smooth'});return}
+  if(!state.locks[quiz.id]){showToast('בוחן זה טרם נפתח על ידי המרצה 🔒','error');return}
+  if(state.scores[quiz.id]){showToast('כבר ביצעת את הבוחן הזה ✓','error');return}
+  state.currentQuiz=quiz;state.currentQ=0;state.answers=[];state.submitted=false;
+  openModal();renderQuestion();
+}
+
+/* ── RENDER QUESTION ──────────────────────────────────────────────── */
+function renderQuestion(){
+  const quiz=state.currentQuiz,qi=state.currentQ,q=quiz.questions[qi];
+  const progress=(qi/quiz.questions.length)*100;
+  const letters=['א','ב','ג','ד'];
+  modalContent.innerHTML=`
+    <h2>${quiz.emoji} ${quiz.title}</h2>
+    <div class="quiz-info">שאלה ${qi+1} מתוך ${quiz.questions.length} &mdash; ${quiz.source}</div>
+    <div class="progress-bar"><div class="fill" id="qFill" style="width:${progress}%"></div></div>
+    <div class="question-block">
+      <div class="question-num">שאלה ${qi+1} / ${quiz.questions.length}</div>
+      <div class="question-text">${q.q}</div>
+      <div class="options" id="optsCon">
+        ${q.options.map((opt,oi)=>`
+          <button class="option-btn" data-i="${oi}">
+            <span class="letter">${letters[oi]}</span>
+            <span>${opt}</span>
+          </button>`).join('')}
+      </div>
+      <button class="next-btn" id="nextBtn">${qi<quiz.questions.length-1?'שאלה הבאה ←':'סיום הבוחן ✓'}</button>
+    </div>`;
+  const btns=modalContent.querySelectorAll('.option-btn');
+  const nextBtn=document.getElementById('nextBtn');
+  btns.forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const chosen=+btn.dataset.i;
+      state.answers.push(chosen);
+      btns.forEach(b=>{
+        b.classList.add('disabled');
+        const idx=+b.dataset.i;
+        if(idx===q.answer)b.classList.add('correct');
+        else if(idx===chosen)b.classList.add('wrong');
+      });
+      document.getElementById('qFill').style.width=`${((qi+1)/quiz.questions.length)*100}%`;
+      nextBtn.classList.add('visible');
+    });
+  });
+  nextBtn.addEventListener('click',()=>{
+    state.currentQ++;
+    state.currentQ<quiz.questions.length?renderQuestion():showResults();
+  });
+}
+
+/* ── RESULTS ──────────────────────────────────────────────────────── */
+function showResults(){
+  state.inResults=true;
+  const quiz=state.currentQuiz;
+  let score=0;
+  quiz.questions.forEach((q,i)=>{if(state.answers[i]===q.answer)score++});
+  const total=quiz.questions.length,pct=Math.round(score/total*100);
+  state.scores[quiz.id]={score,total,answers:[...state.answers]};
+  renderQuizGrid();
+  let msg='',col='';
+  if(pct===100){msg='מושלם! ציון מלא! 🏆';col='var(--green)';launchConfetti()}
+  else if(pct>=80){msg='כל הכבוד! תוצאה מצוינת! 🎯';col='var(--cyan)';launchConfetti()}
+  else if(pct>=60){msg='לא רע! יש מקום לשיפור 📈';col='var(--gold)'}
+  else{msg='כדאי לחזור על החומר 📚';col='var(--pink)'}
+  // ring stroke
+  const circ=440,offset=circ-(pct/100)*circ;
+  const strokeCol=pct>=80?'var(--green)':pct>=60?'var(--gold)':'var(--pink)';
+  const letters=['א','ב','ג','ד'];
+  modalContent.innerHTML=`
+    <div class="results-view">
+      <div class="score-circle">
+        <svg class="score-ring-svg" viewBox="0 0 160 160">
+          <circle class="score-ring-bg" cx="80" cy="80" r="70"/>
+          <circle class="score-ring-fill" id="ringFill" cx="80" cy="80" r="70" style="stroke:${strokeCol};transform:rotate(-90deg);transform-origin:center"/>
+          <circle class="score-ring-spin" cx="80" cy="80" r="70"/>
+        </svg>
+        <div class="score-num" style="color:${col}">${score*20}</div>
+        <div class="score-label">נקודות</div>
+      </div>
+      <div class="results-message" style="color:${col}">${msg}</div>
+      <div class="results-review">
+        <h3 style="margin-bottom:16px;text-align:center;font-size:1rem">סקירת תשובות</h3>
+        ${quiz.questions.map((q,i)=>{
+          const ok=state.answers[i]===q.answer;
+          return`<div class="review-item ${ok?'ok':'fail'}">
+            <div class="q">${i+1}. ${q.q}</div>
+            <div class="a">${ok
+              ?`<span class="right">✓ ${q.options[q.answer]}</span>`
+              :`<span class="yours">✗ תשובתך: ${q.options[state.answers[i]]}</span><br><span class="right">✓ תשובה נכונה: ${q.options[q.answer]}</span>`
+            }</div>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="submit-results-btn" id="submitBtn">שלח תוצאות למרצה 📤</button>
+    </div>`;
+  // animate ring
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const r=document.getElementById('ringFill');
+    if(r)r.style.strokeDashoffset=offset;
+  }));
+  document.getElementById('submitBtn').addEventListener('click',submitResults);
+  // Auto-submit immediately so results are always saved even if student exits with X
+  submitResults();
+}
+
+/* ── SUBMIT ───────────────────────────────────────────────────────── */
+async function submitResults(){
+  if(state.submitted) return;
+  state.submitted=true;
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='שולח...';
+  const quiz=state.currentQuiz,result=state.scores[quiz.id];
+  const payload={
+    studentName:state.student.name,studentId:state.student.id,quizTitle:quiz.title,
+    score:result.score,totalQuestions:result.total,timestamp:new Date().toISOString(),
+    answers:quiz.questions.map((q,i)=>({question:q.q,studentAnswer:q.options[result.answers[i]],correctAnswer:q.options[q.answer],isCorrect:result.answers[i]===q.answer}))
+  };
+  try{
+    const res=await fetch('/api/submit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(res.ok){showToast('התוצאות נשלחו בהצלחה! ✅');btn.textContent='נשלח ✓'}
+    else throw new Error();
+  }catch{
+    showToast('שגיאה בשליחה - נשמר מקומית','error');
+    btn.textContent='שגיאה - נסה שוב';btn.disabled=false;
+    const saved=JSON.parse(localStorage.getItem('quiz_results')||'[]');saved.push(payload);
+    localStorage.setItem('quiz_results',JSON.stringify(saved));
+  }
+}
+
+/* ── CONFETTI ─────────────────────────────────────────────────────── */
+function launchConfetti(){
+  const con=document.getElementById('confettiContainer');
+  const cols=['#00d4ff','#7b2ff7','#ff2d95','#00ff88','#ffd700','#ff6b35'];
+  for(let i=0;i<120;i++){
+    const p=document.createElement('div');p.className='confetti-piece';
+    p.style.cssText=`left:${Math.random()*100}%;animation-delay:${Math.random()*2}s;animation-duration:${2+Math.random()*2}s;background:${cols[Math.floor(Math.random()*cols.length)]};border-radius:${Math.random()>.5?'50%':'3px'};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px`;
+    con.appendChild(p);
+  }
+  setTimeout(()=>con.innerHTML='',5500);
+}
+
+/* ── TOAST ────────────────────────────────────────────────────────── */
+function showToast(msg,type='success'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast'+(type==='error'?' error':'')+' show';
+  setTimeout(()=>t.classList.remove('show'),3500);
+}
+
+/* ── HEADER HIDE ON SCROLL ────────────────────────────────────────── */
+let lastScroll=0;const hdr=document.querySelector('header');
+window.addEventListener('scroll',()=>{
+  const cur=window.scrollY;
+  hdr.style.transform=cur>lastScroll&&cur>80?'translateY(-100%)':'translateY(0)';
+  lastScroll=cur;
+},{passive:true});
+
+/* ── EXCEL DOWNLOAD + ADMIN AUTH ──────────────────────────────────── */
+const ADMIN_USER='Yael Maimon';
+const ADMIN_PASS='Yam_0604';
+let adminAuthed=false;
+let pendingLockPanel=false;
+
+const adminOverlay=document.getElementById('adminOverlay');
+const adminForm=document.getElementById('adminForm');
+const adminError=document.getElementById('adminError');
+const adminCancel=document.getElementById('adminCancel');
+
+function openAdminModal(){
+  adminError.textContent='';
+  document.getElementById('adminUser').value='';
+  document.getElementById('adminPass').value='';
+  adminOverlay.classList.add('active');
+  setTimeout(()=>document.getElementById('adminUser').focus(),120);
+}
+function closeAdminModal(){
+  adminOverlay.classList.remove('active');
+}
+adminCancel.addEventListener('click',closeAdminModal);
+adminOverlay.addEventListener('click',e=>{if(e.target===adminOverlay)closeAdminModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&adminOverlay.classList.contains('active'))closeAdminModal()});
+
+adminForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const user=document.getElementById('adminUser').value.trim();
+  const pass=document.getElementById('adminPass').value;
+  if(user!==ADMIN_USER||pass!==ADMIN_PASS){
+    adminError.textContent='שם משתמש או סיסמה שגויים';
+    ['adminUser','adminPass'].forEach(id=>{
+      const el=document.getElementById(id);
+      el.classList.add('input-error');
+      setTimeout(()=>el.classList.remove('input-error'),600);
+    });
+    return;
+  }
+  adminAuthed=true;
+  closeAdminModal();
+  if(pendingLockPanel){pendingLockPanel=false;openLockPanel()}
+  else await doExcelDownload();
+});
+
+document.getElementById('excelFab').addEventListener('click',()=>{
+  if(adminAuthed){doExcelDownload()}else{openAdminModal()}
+});
+
+/* ── LOCK SYSTEM ──────────────────────────────────────────────────── */
+async function fetchLocks(){
+  try{
+    const res=await fetch('/api/locks');
+    if(res.ok){
+      const data=await res.json();
+      Object.assign(state.locks,data);
+      renderQuizGrid();
+    }
+  }catch(e){}
+}
+fetchLocks();
+setInterval(fetchLocks,30000);
+
+const lockFab=document.getElementById('lockFab');
+const lockPanelOverlay=document.getElementById('lockPanelOverlay');
+const lpCloseBtn=document.getElementById('lpCloseBtn');
+const lpSaveBtn=document.getElementById('lpSaveBtn');
+const lpStatus=document.getElementById('lpStatus');
+const lockQuizList=document.getElementById('lockQuizList');
+
+function openLockPanel(){
+  renderLockPanel();
+  lpStatus.textContent='';lpStatus.className='lp-status';
+  lockPanelOverlay.classList.add('active');
+}
+function closeLockPanel(){lockPanelOverlay.classList.remove('active')}
+
+lpCloseBtn.addEventListener('click',closeLockPanel);
+lockPanelOverlay.addEventListener('click',e=>{if(e.target===lockPanelOverlay)closeLockPanel()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&lockPanelOverlay.classList.contains('active'))closeLockPanel()});
+
+lockFab.addEventListener('click',()=>{
+  if(adminAuthed){openLockPanel()}else{pendingLockPanel=true;openAdminModal()}
+});
+
+function renderLockPanel(){
+  lockQuizList.innerHTML=quizData.map(q=>`
+    <div class="quiz-lock-row">
+      <div class="ql-num">בוחן ${q.id}</div>
+      <div class="ql-title">${q.title}</div>
+      <label class="toggle-wrap">
+        <input type="checkbox" data-quiz="${q.id}"${state.locks[q.id]?' checked':''}>
+        <span class="toggle-slider"></span>
+      </label>
+    </div>`).join('');
+}
+
+lpSaveBtn.addEventListener('click',async()=>{
+  const checks=lockQuizList.querySelectorAll('input[type=checkbox]');
+  const newLocks={};
+  checks.forEach(cb=>{newLocks[cb.dataset.quiz]=cb.checked});
+  lpSaveBtn.disabled=true;lpSaveBtn.textContent='שומר...';
+  lpStatus.textContent='';lpStatus.className='lp-status';
+  try{
+    const res=await fetch('/api/locks',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({adminUser:ADMIN_USER,adminPass:ADMIN_PASS,locks:newLocks})
+    });
+    if(res.ok){
+      Object.assign(state.locks,newLocks);
+      renderQuizGrid();
+      lpStatus.textContent='✓ הנעילות עודכנו בהצלחה';
+      lpStatus.className='lp-status ok';
+      showToast('מצב הבחנים עודכן ✅');
+    }else throw new Error();
+  }catch(e){
+    lpStatus.textContent='✗ שגיאה בשמירה, נסה שוב';
+    lpStatus.className='lp-status err';
+  }finally{
+    lpSaveBtn.disabled=false;lpSaveBtn.textContent='שמור שינויים 💾';
+  }
+});
+
+async function doExcelDownload(){
+  const btn=document.getElementById('excelFab');
+  btn.classList.add('loading');
+  const origLabel=btn.querySelector('.fab-label').textContent;
+  btn.querySelector('.fab-label').textContent='טוען נתונים...';
+  try{
+    const res=await fetch('/api/results');
+    if(!res.ok) throw new Error('שגיאה בטעינת הנתונים');
+    const all=await res.json();
+
+    // Keep only complete records (with student ID and name)
+    const results=all.filter(r=>r.studentId&&r.studentName&&r.quizTitle);
+    if(!results.length){showToast('אין תוצאות תקינות להורדה עדיין','error');return}
+
+    // Map quiz title → quiz number from local quizData
+    const titleToNum={};
+    quizData.forEach(q=>{ titleToNum[q.title]=q.id; });
+
+    const rows=results.map(r=>{
+      const total = r.totalQuestions || 5;
+      const score = r.score ?? 0;
+      const pct   = r.percentage != null ? r.percentage : Math.round((score/total)*100);
+      const quizNum = titleToNum[r.quizTitle] || '?';
+      return {
+        'תעודת זהות':        r.studentId,
+        'שם סטודנט':         r.studentName,
+        'מספר בוחן':         quizNum,
+        'שם הבוחן':          r.quizTitle,
+        'ציון':              score*20,
+        'תשובות נכונות':     score,
+        'תשובות לא נכונות':  total - score,
+        'תאריך':             new Date(r.timestamp).toLocaleString('he-IL')
+      };
+    });
+
+    const wb=XLSX.utils.book_new();
+    const ws=XLSX.utils.json_to_sheet(rows,{header:[
+      'תעודת זהות','שם סטודנט','מספר בוחן','שם הבוחן','ציון','תשובות נכונות','תשובות לא נכונות','תאריך'
+    ]});
+    ws['!cols']=[{wch:14},{wch:22},{wch:12},{wch:46},{wch:10},{wch:16},{wch:20},{wch:22}];
+    ws['!sheetView']={rightToLeft:true};
+    XLSX.utils.book_append_sheet(wb,ws,'תוצאות בחנים');
+    XLSX.writeFile(wb,`quiz_results_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast(`הורדת ${rows.length} רשומות בהצלחה ✅`);
+  }catch(err){
+    showToast('שגיאה: '+err.message,'error');
+    adminAuthed=false;
+  }finally{
+    btn.classList.remove('loading');
+    btn.querySelector('.fab-label').textContent=origLabel;
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attachment Style Quiz</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#06070d;--muted:rgba(238,238,245,0.58);--dim:rgba(238,238,245,0.35)}
+html{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:#eeeef5;-webkit-font-smoothing:antialiased}
+body{min-height:100vh;overflow-x:hidden}
+#aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(90px);animation:drift linear infinite alternate}
+.o1{width:700px;height:700px;top:-220px;left:-180px;background:radial-gradient(circle,rgba(130,60,230,.38),transparent 68%);animation-duration:22s}
+.o2{width:560px;height:560px;top:-80px;right:-160px;background:radial-gradient(circle,rgba(0,185,220,.26),transparent 68%);animation-duration:19s;animation-delay:-9s}
+.o3{width:720px;height:720px;bottom:-280px;left:40%;background:radial-gradient(circle,rgba(220,70,130,.22),transparent 68%);animation-duration:28s;animation-delay:-6s}
+.o4{width:460px;height:460px;bottom:-80px;right:-80px;background:radial-gradient(circle,rgba(50,210,120,.2),transparent 68%);animation-duration:21s;animation-delay:-14s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}34%{transform:translate(28px,-22px) scale(1.06)}67%{transform:translate(-18px,26px) scale(.96)}100%{transform:translate(12px,-8px) scale(1.02)}}
+#app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 16px 40px}
+#hdr{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;background:rgba(6,7,13,.55);backdrop-filter:blur(22px);border-bottom:1px solid rgba(255,255,255,.07)}
+.brand{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:rgba(255,255,255,.8)}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:rgba(160,110,255,.9);box-shadow:0 0 10px rgba(160,110,255,.8);animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.8)}}
+.hdr-badge{font-size:11px;color:var(--dim);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:4px 12px}
+.card{width:100%;max-width:660px;background:rgba(255,255,255,.042);border:1px solid rgba(255,255,255,.1);border-radius:26px;backdrop-filter:blur(28px);box-shadow:0 32px 80px -24px rgba(0,0,0,.75),inset 0 0 0 1px rgba(255,255,255,.055)}
+.screen{display:none}
+.screen.active{display:block;animation:sIn .38s cubic-bezier(.22,1,.36,1) both}
+.screen.leaving{display:block;animation:sOut .22s cubic-bezier(.4,0,1,1) both}
+@keyframes sIn{from{opacity:0;transform:translateY(18px);filter:blur(7px)}to{opacity:1;transform:none;filter:none}}
+@keyframes sOut{from{opacity:1;transform:none;filter:none}to{opacity:0;transform:translateY(-12px);filter:blur(6px)}}
+/* INTRO */
+#intro .pad{padding:48px 44px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);border:1px solid rgba(255,255,255,.1);border-radius:100px;padding:6px 14px;margin-bottom:30px}
+.intro-title{font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.025em;margin-bottom:14px;background:linear-gradient(140deg,#fff 0%,rgba(255,255,255,.6) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.intro-sub{font-size:15px;line-height:1.7;color:var(--muted);margin-bottom:36px;max-width:480px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:32px}
+.stat{background:rgba(255,255,255,.042);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px 16px}
+.stat-v{font-size:22px;font-weight:800;color:#fff}
+.stat-l{font-size:11px;color:var(--dim);margin-top:3px}
+.cta-row{display:flex;align-items:center;justify-content:space-between;gap:16px;background:rgba(255,255,255,.046);border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:20px 22px}
+.cta-txt{font-size:13px;color:var(--muted);line-height:1.5}
+.cta-txt strong{display:block;font-size:14px;font-weight:600;color:#fff;margin-bottom:2px}
+.btn-start{flex-shrink:0;display:inline-flex;align-items:center;gap:8px;background:#fff;color:#06070d;font-size:15px;font-weight:700;padding:13px 26px;border-radius:13px;border:none;cursor:pointer;font-family:inherit;transition:all .18s;white-space:nowrap}
+.btn-start:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(255,255,255,.18)}
+.btn-start svg,.btn-start:hover svg{transition:transform .18s}
+.btn-start:hover svg{transform:translateX(4px)}
+.intro-disc{margin-top:22px;font-size:11.5px;color:var(--dim);text-align:center;line-height:1.6}
+/* QUIZ */
+#quiz .pad{padding:32px 36px}
+.quiz-hdr{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:28px}
+.q-badge{display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:rgba(255,255,255,.65);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:5px 13px}
+.prog-wrap{flex:1;min-width:120px;max-width:200px}
+.prog-track{height:4px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
+.prog-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,rgba(140,100,255,.85),rgba(60,195,255,.85));transition:width .55s cubic-bezier(.22,1,.36,1)}
+.q-cat{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:8px}
+.q-text{font-size:21px;font-weight:700;line-height:1.35;letter-spacing:-.015em;margin-bottom:6px}
+.q-tip{font-size:13px;color:rgba(255,255,255,.42);font-style:italic;margin-bottom:22px}
+.options{display:flex;flex-direction:column;gap:9px;margin-bottom:26px}
+.opt{position:relative;display:flex;align-items:center;gap:13px;background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);border-radius:15px;padding:15px 17px;cursor:pointer;text-align:left;width:100%;font-family:inherit;color:#eeeef5;font-size:14.5px;font-weight:500;line-height:1.4;transition:border-color .15s,background .15s,transform .15s;overflow:hidden}
+.opt::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(120deg,rgba(255,255,255,.09) 0%,transparent 55%);opacity:0;transition:opacity .15s;pointer-events:none}
+.opt:hover{border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.068);transform:translateX(3px)}
+.opt:hover::after,.opt.sel::after{opacity:1}
+.opt.sel{border-color:rgba(255,255,255,.42);background:rgba(255,255,255,.09);transform:translateX(0)}
+.opt-radio{flex-shrink:0;width:21px;height:21px;border-radius:50%;border:2px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;transition:all .18s}
+.opt.sel .opt-radio{border-color:rgba(255,255,255,.7);background:rgba(255,255,255,.12)}
+.opt-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:0;transform:scale(.4);transition:all .22s cubic-bezier(.34,1.56,.64,1)}
+.opt.sel .opt-dot{opacity:1;transform:scale(1)}
+.quiz-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.quiz-foot-r{display:flex;align-items:center;gap:8px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:500;color:rgba(255,255,255,.6);background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.11);border-radius:11px;padding:9px 17px;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn-ghost:hover:not(:disabled){background:rgba(255,255,255,.1);color:#fff}
+.btn-ghost:disabled{opacity:.3;cursor:not-allowed}
+.quiz-tip{font-size:11.5px;color:var(--dim);font-style:italic;padding-top:14px;text-align:center}
+/* RESULT */
+#result .pad{padding:40px}
+.res-label{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:12px}
+.res-style-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+.style-icon{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:26px;animation:iconPop .5s cubic-bezier(.34,1.56,.64,1) both .1s}
+@keyframes iconPop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+.res-title{font-size:38px;font-weight:800;letter-spacing:-.025em;background:linear-gradient(140deg,#fff 0%,rgba(255,255,255,.6) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.conf-badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;color:rgba(255,255,255,.65);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:4px 11px;align-self:flex-start}
+.res-short{font-size:14px;color:var(--muted);margin-bottom:22px}
+.vibe-card{border-radius:18px;border:1px solid rgba(255,255,255,.12);padding:22px 24px;margin-bottom:18px}
+.vibe-lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-bottom:7px}
+.vibe-txt{font-size:14px;line-height:1.7;color:rgba(255,255,255,.78)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+.info-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px}
+.ic-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.ic-sub{font-size:11px;color:var(--dim);margin-bottom:12px}
+.ic-list{list-style:none;display:flex;flex-direction:column;gap:7px}
+.ic-list li{display:flex;gap:9px;font-size:12.5px;color:rgba(255,255,255,.68);line-height:1.45}
+.ic-list li::before{content:'';flex-shrink:0;width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3);margin-top:5px}
+.scores-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:16px;padding:20px;margin-bottom:18px}
+.sc-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:2px}
+.sc-sub{font-size:11px;color:var(--dim);margin-bottom:16px}
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sbar-label{display:flex;justify-content:space-between;font-size:11.5px;color:rgba(255,255,255,.58);margin-bottom:5px}
+.sbar-track{height:5px;border-radius:100px;background:rgba(255,255,255,.08);overflow:hidden}
+.sbar-fill{height:100%;border-radius:100px;background:rgba(255,255,255,.38);width:0;transition:width .9s cubic-bezier(.22,1,.36,1)}
+.sep{height:1px;background:rgba(255,255,255,.08);margin:4px 0 16px}
+.res-foot{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.btn-home,.btn-retake,.btn-copy{display:inline-flex;align-items:center;gap:6px;font-size:13.5px;border-radius:11px;padding:9px 18px;cursor:pointer;font-family:inherit;transition:all .15s;border:none}
+.btn-home,.btn-copy{font-weight:500;color:rgba(255,255,255,.7);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
+.btn-home:hover,.btn-copy:hover{background:rgba(255,255,255,.11);color:#fff}
+.btn-retake{font-weight:700;color:#06070d;background:#fff}
+.btn-retake:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(255,255,255,.14)}
+.btn-copy{margin-left:auto}
+.res-disc{font-size:11.5px;color:var(--dim);margin-top:18px;line-height:1.6}
+@media(max-width:580px){
+  #intro .pad,#quiz .pad,#result .pad{padding:28px 22px}
+  .intro-title,.res-title{font-size:28px}
+  .stats{gap:8px}.stat{padding:14px 10px}.stat-v{font-size:18px}
+  .cta-row{flex-direction:column;align-items:flex-start}
+  .btn-start{width:100%;justify-content:center}
+  .q-text{font-size:17px}
+  .two-col,.score-grid{grid-template-columns:1fr}
+  .res-foot{flex-direction:column}
+  .btn-home,.btn-retake,.btn-copy{width:100%;justify-content:center}
+  .btn-copy{margin-left:0}
+}
+</style>
+</head>
+<body>
+<div id="aurora">
+  <div class="orb o1"></div><div class="orb o2"></div>
+  <div class="orb o3"></div><div class="orb o4"></div>
+</div>
+<header id="hdr">
+  <div class="brand"><div class="brand-dot"></div>Attachment Style Quiz</div>
+  <div class="hdr-badge">Self-reflection · Not a diagnosis</div>
+</header>
+<div id="app">
+  <div class="card">
+    <div id="intro" class="screen active">
+      <div class="pad">
+        <div class="eyebrow">✦ 2-minute quiz</div>
+        <h1 class="intro-title">Discover your<br>attachment style</h1>
+        <p class="intro-sub">Answer six honest scenarios and we'll reveal the relational pattern shaping how you connect — plus a gentle growth plan just for you.</p>
+        <div class="stats">
+          <div class="stat"><div class="stat-v">6</div><div class="stat-l">Questions</div></div>
+          <div class="stat"><div class="stat-v">~2m</div><div class="stat-l">Duration</div></div>
+          <div class="stat"><div class="stat-v">4</div><div class="stat-l">Styles</div></div>
+        </div>
+        <div class="cta-row">
+          <div class="cta-txt"><strong>How to answer</strong>Pick what feels true <em>most of the time</em> — especially under stress.</div>
+          <button class="btn-start" id="btn-start">Start<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></button>
+        </div>
+        <p class="intro-disc">Attachment styles are patterns, not fixed labels. People shift across contexts and relationships.</p>
+      </div>
+    </div>
+    <div id="quiz" class="screen">
+      <div class="pad">
+        <div class="quiz-hdr">
+          <div class="q-badge" id="q-counter">Question 1 / 6</div>
+          <div class="prog-wrap"><div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:16.67%"></div></div></div>
+        </div>
+        <div id="q-cat" class="q-cat"></div>
+        <h2 class="q-text" id="q-text"></h2>
+        <p class="q-tip" id="q-tip"></p>
+        <div class="options" id="options"></div>
+        <div class="quiz-foot">
+          <button class="btn-ghost" id="btn-back" disabled>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>Back
+          </button>
+          <div class="quiz-foot-r">
+            <button class="btn-ghost" id="btn-restart">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>Restart
+            </button>
+          </div>
+        </div>
+        <p class="quiz-tip">If two feel true, pick what you do when you're <em>stressed</em>.</p>
+      </div>
+    </div>
+    <div id="result" class="screen">
+      <div class="pad">
+        <div class="res-label">Your likely style</div>
+        <div class="res-style-row">
+          <div class="style-icon" id="res-icon"></div>
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="res-title" id="res-title"></div>
+              <div class="conf-badge" id="res-conf"></div>
+            </div>
+            <div class="res-short" id="res-short"></div>
+          </div>
+        </div>
+        <div class="vibe-card" id="vibe-card"><div class="vibe-lbl">The vibe</div><div class="vibe-txt" id="vibe-txt"></div></div>
+        <div class="two-col">
+          <div class="info-card"><div class="ic-title">Your strengths</div><div class="ic-sub">What this style does well</div><ul class="ic-list" id="strengths-list"></ul></div>
+          <div class="info-card"><div class="ic-title">Gentle growth plan</div><div class="ic-sub">Small reps, big results</div><ul class="ic-list" id="growth-list"></ul></div>
+        </div>
+        <div class="scores-card"><div class="sc-title">Your score mix</div><div class="sc-sub">Most people are a blend — this is your distribution.</div><div class="score-grid" id="score-grid"></div></div>
+        <div class="sep"></div>
+        <div class="res-foot">
+          <button class="btn-home" id="btn-home"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Home</button>
+          <button class="btn-retake" id="btn-retake">Take again<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+          <button class="btn-copy" id="btn-copy"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Copy summary</button>
+        </div>
+        <p class="res-disc">If this brought up big feelings, consider speaking with a licensed mental health professional.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+var QUESTIONS=[
+  {id:'q1',cat:'Closeness \u0026 intimacy',text:'How do you typically feel when a partner or close friend wants more emotional closeness?',tip:'Notice your first impulse \u2014 not what you wish you did.',options:[
+    {id:'a',label:'I feel comfortable and lean in.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'I like it, but worry it could change.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'I feel a bit crowded and want more space.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I want closeness, but it also scares me.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]},
+  {id:'q2',cat:'After conflict',text:'When conflict happens, what\'s your most common pattern in the next few hours?',tip:'Think: texting style, tone, and where your mind goes.',options:[
+    {id:'a',label:'I cool down and talk it through.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'I seek reassurance and feel uneasy until it\'s resolved.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'I withdraw and prefer to process alone.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I swing between reaching out and pulling away.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]},
+  {id:'q3',cat:'Waiting \u0026 uncertainty',text:'A message goes unanswered for a while. What\'s the most likely thought or feeling?',tip:'This is about your nervous system \u2014 not what\'s objectively true.',options:[
+    {id:'a',label:'They\'re probably busy. I\'ll hear back.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'Did I do something wrong? I feel restless.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'I\'m fine \u2014 I\'ll just focus on my own things.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I feel anxious and want to shut it all down.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]},
+  {id:'q4',cat:'Independence vs togetherness',text:'What feels most true about your ideal relationship dynamic?',tip:null,options:[
+    {id:'a',label:'Close and supportive, with healthy independence.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'Very close \u2014 I feel best when deeply connected.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'Plenty of space \u2014 I need lots of autonomy.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I want closeness, but I\'m never fully at ease.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]},
+  {id:'q5',cat:'Trust \u0026 vulnerability',text:'How easy is it for you to share your needs and ask for help?',tip:null,options:[
+    {id:'a',label:'Pretty easy \u2014 I can be open without losing myself.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'I share, but worry I\'ll be too much or not enough.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'I\'d rather handle it alone; relying on others is hard.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I want to share, but it feels risky and triggering.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]},
+  {id:'q6',cat:'Stable closeness',text:'How do you react to stable, consistent closeness over time?',tip:null,options:[
+    {id:'a',label:'It feels grounding. I relax into it.',w:{secure:3,anxious:0,avoidant:0,fearful:0}},
+    {id:'b',label:'I enjoy it but fear it could be taken away.',w:{secure:0,anxious:3,avoidant:0,fearful:1}},
+    {id:'c',label:'I start feeling constrained and need more distance.',w:{secure:0,anxious:0,avoidant:3,fearful:1}},
+    {id:'d',label:'I feel comforted and suspicious at the same time.',w:{secure:0,anxious:1,avoidant:1,fearful:3}}
+  ]}
+];
+var STYLES={
+  secure:{title:'Secure',icon:'\uD83E\uDD1D',short:'Calm closeness, steady trust',vibe:'Your nervous system likes connection. You can be close and stay yourself \u2014 a rare and grounding combination that others feel safe around.',gradient:'linear-gradient(135deg,rgba(16,185,129,.14),rgba(6,182,212,.14))',strengths:['Comfortable with both intimacy and independence','Repairs conflict with honesty and care','Trust grows naturally through consistent actions'],growth:['Name your needs early \u2014 before they stack up','Keep boundaries gentle but clear','Choose partners and friends who genuinely reciprocate']},
+  anxious:{title:'Anxious',icon:'\uD83D\uDD25',short:'Big feelings, needs reassurance',vibe:'Your system scans for distance. You care deeply \u2014 sometimes so loudly it disrupts your own peace. That emotional depth is a real gift worth channeling.',gradient:'linear-gradient(135deg,rgba(236,72,153,.14),rgba(251,191,36,.14))',strengths:['Highly attuned to relationship dynamics','Deep capacity for closeness and devotion','Strongly motivated to repair and reconnect'],growth:['Practice self-soothing before reaching out','Ask directly \u2014 avoid hinting and spiraling','Build stability through routines and clear plans']},
+  avoidant:{title:'Avoidant',icon:'\uD83D\uDEE1\uFE0F',short:'Independent, guarded closeness',vibe:'Your system protects independence above all. You value space \u2014 and sometimes hide your needs so well you forget they exist. That\'s worth exploring.',gradient:'linear-gradient(135deg,rgba(59,130,246,.14),rgba(99,102,241,.14))',strengths:['Strong self-reliance and composure under pressure','Good at staying functional when stressed','Clear, consistent preference for autonomy'],growth:['Share small needs early \u2014 low-stakes practice','Notice shutdown signals and pause gently','Let people support you in specific, bounded ways']},
+  fearful:{title:'Fearful-Avoidant',icon:'\uD83C\uDF0A',short:'Push\u2013pull: craving and caution',vibe:'Your system wants closeness and expects pain \u2014 simultaneously. That push\u2013pull is exhausting and workable. You\'re not broken; you\'re beautifully complex.',gradient:'linear-gradient(135deg,rgba(139,92,246,.14),rgba(236,72,153,.14))',strengths:['Intense empathy and emotional depth','Strong desire for meaningful connection','Resilience built through navigating real complexity'],growth:['Slow the pace \u2014 consistency over intensity','Name triggers and create repair rituals','Choose safe people; practice predictable closeness']}
+};
+var state={step:'intro',index:0,answers:{}},_result=null,_trans=false;
+function computeScores(a){var s={secure:0,anxious:0,avoidant:0,fearful:0};QUESTIONS.forEach(function(q){var c=a[q.id],o=q.options.find(function(x){return x.id===c});if(!o)return;Object.keys(s).forEach(function(k){s[k]+=o.w[k]})});var t=Object.values(s).reduce(function(a,b){return a+b},0),p={secure:0,anxious:0,avoidant:0,fearful:0};if(t>0)Object.keys(s).forEach(function(k){p[k]=Math.round(s[k]/t*100)});var w='secure',b=-Infinity;['secure','anxious','avoidant','fearful'].forEach(function(k){if(s[k]>b){b=s[k];w=k}});var so=Object.keys(s).map(function(k){return{k:k,v:s[k]}}).sort(function(a,b){return b.v-a.v}),sp=so.length>=2?so[0].v-so[1].v:so[0].v;return{pct:p,winner:w,conf:Math.max(45,Math.min(92,Math.round(sp/3*20+55)))}}
+function goTo(ns){if(_trans)return;_trans=true;var c=document.getElementById(state.step);c.classList.add('leaving');setTimeout(function(){c.classList.remove('active','leaving');state.step=ns;var n=document.getElementById(ns);n.classList.add('active');if(ns==='quiz')renderQuiz();if(ns==='result')renderResult();_trans=false},220)}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function qfade(fn){var el=document.getElementById('quiz');el.style.transition='opacity .16s ease';el.style.opacity='0';setTimeout(function(){fn();el.style.opacity='1'},160)}
+function renderQuiz(){var q=QUESTIONS[state.index],pct=Math.round((state.index+1)/QUESTIONS.length*100);document.getElementById('q-counter').textContent='Question '+(state.index+1)+' / '+QUESTIONS.length;document.getElementById('prog-fill').style.width=pct+'%';document.getElementById('q-cat').textContent=q.cat;document.getElementById('q-text').textContent=q.text;var te=document.getElementById('q-tip');q.tip?(te.textContent=q.tip,te.style.display='block'):(te.textContent='',te.style.display='none');var c=document.getElementById('options');c.innerHTML='';q.options.forEach(function(o){var b=document.createElement('button');b.className='opt'+(state.answers[q.id]===o.id?' sel':'');b.innerHTML='<div class="opt-radio"><div class="opt-dot"></div></div><span>'+esc(o.label)+'</span>';b.addEventListener('click',function(){if(state.answers[q.id]===o.id)return;state.answers[q.id]=o.id;c.querySelectorAll('.opt').forEach(function(x){x.classList.remove('sel')});b.classList.add('sel');setTimeout(function(){state.index>=QUESTIONS.length-1?goTo('result'):qfade(function(){state.index++;renderQuiz()})},300)});c.appendChild(b)});document.getElementById('btn-back').disabled=state.index===0}
+function renderResult(){var r=computeScores(state.answers);_result=r;var m=STYLES[r.winner];document.getElementById('res-icon').textContent=m.icon;document.getElementById('res-title').textContent=m.title;document.getElementById('res-conf').textContent=r.conf+'% match';document.getElementById('res-short').textContent=m.short;document.getElementById('vibe-card').style.background=m.gradient;document.getElementById('vibe-txt').textContent=m.vibe;document.getElementById('strengths-list').innerHTML=m.strengths.map(function(s){return'<li>'+esc(s)+'</li>'}).join('');document.getElementById('growth-list').innerHTML=m.growth.map(function(g){return'<li>'+esc(g)+'</li>'}).join('');var lb={secure:'Secure',anxious:'Anxious',avoidant:'Avoidant',fearful:'Fearful-Avoidant'};document.getElementById('score-grid').innerHTML=Object.keys(r.pct).map(function(k){return'<div><div class="sbar-label"><span>'+lb[k]+'</span><span>'+r.pct[k]+'%</span></div><div class="sbar-track"><div class="sbar-fill" data-pct="'+r.pct[k]+'"></div></div></div>'}).join('');requestAnimationFrame(function(){requestAnimationFrame(function(){document.querySelectorAll('.sbar-fill').forEach(function(el){el.style.width=el.dataset.pct+'%'})})})}
+document.getElementById('btn-start').addEventListener('click',function(){state={step:'intro',index:0,answers:{}};goTo('quiz')});
+document.getElementById('btn-back').addEventListener('click',function(){if(state.index===0)return;qfade(function(){state.index--;renderQuiz()})});
+document.getElementById('btn-restart').addEventListener('click',function(){state={step:'quiz',index:0,answers:{}};goTo('intro')});
+document.getElementById('btn-home').addEventListener('click',function(){state={step:'result',index:0,answers:{}};goTo('intro')});
+document.getElementById('btn-retake').addEventListener('click',function(){state={step:'result',index:0,answers:{}};goTo('intro')});
+document.getElementById('btn-copy').addEventListener('click',function(){if(!_result)return;var m=STYLES[_result.winner],txt='Attachment Style Quiz\n\nStyle: '+m.title+'\nMatch: '+_result.conf+'%\n\nSecure: '+_result.pct.secure+'% | Anxious: '+_result.pct.anxious+'% | Avoidant: '+_result.pct.avoidant+'% | Fearful-Avoidant: '+_result.pct.fearful+'%\n\nStrengths:\n'+m.strengths.map(function(s){return'  \u2022 '+s}).join('\n')+'\n\nGrowth plan:\n'+m.growth.map(function(g){return'  \u2022 '+g}).join('\n');navigator.clipboard&&navigator.clipboard.writeText(txt).catch(function(){});var b=document.getElementById('btn-copy'),orig=b.innerHTML;b.innerHTML='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Copied!';setTimeout(function(){b.innerHTML=orig},2000)});
+</script>
+</body>
+</html>
