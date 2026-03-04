@@ -1,0 +1,166 @@
+[
+  {
+    "studentName": "יעל מימון",
+    "studentId": "061010864",
+    "quizTitle": "אגף מערכות מידע בארגונים - תפקיד ה-CIO",
+    "score": 5,
+    "totalQuestions": 5,
+    "percentage": 100,
+    "answers": [
+      {
+        "question": "מהו תפקיד ה-CIO בארגון?",
+        "studentAnswer": "מנהל בכיר האחראי על כל היבטי טכנולוגיית המידע בארגון",
+        "correctAnswer": "מנהל בכיר האחראי על כל היבטי טכנולוגיית המידע בארגון",
+        "isCorrect": true
+      },
+      {
+        "question": "מהו מודל In House בתפעול מערכות מידע?",
+        "studentAnswer": "כל פונקציות ה-IT מבוצעות על ידי עובדי הארגון עצמו",
+        "correctAnswer": "כל פונקציות ה-IT מבוצעות על ידי עובדי הארגון עצמו",
+        "isCorrect": true
+      },
+      {
+        "question": "מהו TCO (Total Cost of Ownership)?",
+        "studentAnswer": "סך כל ההוצאות הקשורות למערכת לאורך מחזור החיים המלא",
+        "correctAnswer": "סך כל ההוצאות הקשורות למערכת לאורך מחזור החיים המלא",
+        "isCorrect": true
+      },
+      {
+        "question": "מהו היתרון המרכזי של מודל Outsourcing?",
+        "studentAnswer": "חיסכון בעלויות וגישה למומחיות טכנולוגית מתקדמת",
+        "correctAnswer": "חיסכון בעלויות וגישה למומחיות טכנולוגית מתקדמת",
+        "isCorrect": true
+      },
+      {
+        "question": "במודל היברידי, אילו פונקציות נשארות בארגון?",
+        "studentAnswer": "פונקציות אסטרטגיות ורגישות כמו אבטחת מידע וניהול מערכות ליבה",
+        "correctAnswer": "פונקציות אסטרטגיות ורגישות כמו אבטחת מידע וניהול מערכות ליבה",
+        "isCorrect": true
+      }
+    ],
+    "timestamp": "2026-03-04T12:30:54.663Z"
+  },
+  {
+    "studentName": "יעל מימון",
+    "studentId": "061010864",
+    "quizTitle": "מושגי יסוד ורכיבים מרכזיים במערכות מידע",
+    "score": 1,
+    "totalQuestions": 5,
+    "percentage": 20,
+    "answers": [
+      {
+        "question": "מהם ארבעת רכיבי הליבה של מערכת מידע?",
+        "studentAnswer": "אנשים, תהליכים, טכנולוגיה, מידע",
+        "correctAnswer": "חומרה, תוכנה, נתונים, תהליכים עסקיים",
+        "isCorrect": false
+      },
+      {
+        "question": "מהו ההבדל בין נתונים למידע?",
+        "studentAnswer": "אין הבדל - שניהם זהים",
+        "correctAnswer": "נתונים הם פריטי מידע גולמיים ללא הקשר, מידע הוא נתונים מעובדים בעלי משמעות",
+        "isCorrect": false
+      },
+      {
+        "question": "מערכת TPS מיועדת בעיקר ל:",
+        "studentAnswer": "מנהלי ביניים",
+        "correctAnswer": "דרג תפעולי - טיפול בעסקאות ופעולות יומיומיות",
+        "isCorrect": false
+      },
+      {
+        "question": "כמה אחוז מהארגונים מדווחים על תלות גבוהה במערכות מידע לתפעול השוטף?",
+        "studentAnswer": "65%",
+        "correctAnswer": "85%",
+        "isCorrect": false
+      },
+      {
+        "question": "מערכת EIS מיועדת ל:",
+        "studentAnswer": "הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות",
+        "correctAnswer": "הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות",
+        "isCorrect": true
+      }
+    ],
+    "timestamp": "2026-03-04T12:43:59.412Z"
+  },
+  {
+    "studentName": "יעל מימון",
+    "studentId": "061010864",
+    "quizTitle": "מושגי יסוד ורכיבים מרכזיים במערכות מידע",
+    "score": 2,
+    "totalQuestions": 5,
+    "percentage": 40,
+    "answers": [
+      {
+        "question": "מהם ארבעת רכיבי הליבה של מערכת מידע?",
+        "studentAnswer": "אנשים, תהליכים, טכנולוגיה, מידע",
+        "correctAnswer": "חומרה, תוכנה, נתונים, תהליכים עסקיים",
+        "isCorrect": false
+      },
+      {
+        "question": "מהו ההבדל בין נתונים למידע?",
+        "studentAnswer": "נתונים הם פריטי מידע גולמיים ללא הקשר, מידע הוא נתונים מעובדים בעלי משמעות",
+        "correctAnswer": "נתונים הם פריטי מידע גולמיים ללא הקשר, מידע הוא נתונים מעובדים בעלי משמעות",
+        "isCorrect": true
+      },
+      {
+        "question": "מערכת TPS מיועדת בעיקר ל:",
+        "studentAnswer": "מנהלי ביניים",
+        "correctAnswer": "דרג תפעולי - טיפול בעסקאות ופעולות יומיומיות",
+        "isCorrect": false
+      },
+      {
+        "question": "כמה אחוז מהארגונים מדווחים על תלות גבוהה במערכות מידע לתפעול השוטף?",
+        "studentAnswer": "65%",
+        "correctAnswer": "85%",
+        "isCorrect": false
+      },
+      {
+        "question": "מערכת EIS מיועדת ל:",
+        "studentAnswer": "הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות",
+        "correctAnswer": "הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות",
+        "isCorrect": true
+      }
+    ],
+    "timestamp": "2026-03-04T13:08:17.713Z"
+  },
+  {
+    "studentName": "Test",
+    "studentId": "123456789",
+    "quizTitle": "מושגי יסוד ורכיבים מרכזיים במערכות מידע",
+    "score": 0,
+    "totalQuestions": 5,
+    "percentage": 0,
+    "answers": [
+      {
+        "question": "מהם ארבעת רכיבי הליבה של מערכת מידע?",
+        "studentAnswer": "אנשים, תהליכים, טכנולוגיה, מידע",
+        "correctAnswer": "חומרה, תוכנה, נתונים, תהליכים עסקיים",
+        "isCorrect": false
+      },
+      {
+        "question": "מהו ההבדל בין נתונים למידע?",
+        "studentAnswer": "אין הבדל - שניהם זהים",
+        "correctAnswer": "נתונים הם פריטי מידע גולמיים ללא הקשר, מידע הוא נתונים מעובדים בעלי משמעות",
+        "isCorrect": false
+      },
+      {
+        "question": "מערכת TPS מיועדת בעיקר ל:",
+        "studentAnswer": "הנהלה בכירה",
+        "correctAnswer": "דרג תפעולי - טיפול בעסקאות ופעולות יומיומיות",
+        "isCorrect": false
+      },
+      {
+        "question": "כמה אחוז מהארגונים מדווחים על תלות גבוהה במערכות מידע לתפעול השוטף?",
+        "studentAnswer": "50%",
+        "correctAnswer": "85%",
+        "isCorrect": false
+      },
+      {
+        "question": "מערכת EIS מיועדת ל:",
+        "studentAnswer": "עובדים תפעוליים",
+        "correctAnswer": "הנהלה בכירה - תמיכה בקבלת החלטות אסטרטגיות",
+        "isCorrect": false
+      }
+    ],
+    "timestamp": "2026-03-04T13:17:33.834Z"
+  }
+]
